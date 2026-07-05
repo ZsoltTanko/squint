@@ -8,7 +8,9 @@ import AppKit
 /// Layout, top to bottom:
 ///   - Slim header (preset chip · model chip · status dot · gear · ✕)
 ///   - Single-line collapsed selection preview (click to expand)
-///   - Response area (the star — fills available space, Markdown rendered)
+///   - Response area (the star — fills available space, renders the full
+///     conversation transcript: Markdown answers, with follow-up questions
+///     as visually distinct rows between them)
 ///   - Inline error pill (only when there's an error)
 ///   - Optional follow-up bar (hidden by default, ⌘L or click to reveal)
 struct PanelView: View {
@@ -298,84 +300,84 @@ struct PanelView: View {
 
     private var responseArea: some View {
         ZStack(alignment: .bottomTrailing) {
-            ScrollView {
-                VStack(alignment: .leading, spacing: 6) {
-                    if let preset = viewModel.selectedPreset, preset.requiresUserInput {
-                        // `.plain` (not `.roundedBorder`) because the
-                        // rounded-border style silently ignores
-                        // `axis: .vertical` and refuses to wrap, leaving
-                        // long input scrolling off the right edge. We
-                        // draw an equivalent border ourselves below.
-                        TextField(
-                            preset.userInputPlaceholder ?? "Instruction…",
-                            text: $viewModel.userInput,
-                            axis: .vertical
-                        )
-                        .textFieldStyle(.plain)
-                        // Generous upper bound — direct-prompt mode is
-                        // often used with multi-paragraph prompts and the
-                        // outer ScrollView can scroll past the field if
-                        // it ever does run out of vertical space.
-                        .lineLimit(1...30)
-                        .font(.system(size: fontSize))
-                        .focused($presetInputFocused)
-                        .frame(maxWidth: .infinity, alignment: .leading)
-                        // Without this, a vertical-axis TextField sitting
-                        // inside a ScrollView reports a single-line height
-                        // for its intrinsic size and then scrolls its own
-                        // content internally as the user types. The cursor
-                        // stays visible but earlier lines clip off the top
-                        // of the visible field. `fixedSize(vertical:)`
-                        // forces the field to claim its full natural
-                        // height so the parent ScrollView (not the field)
-                        // owns any overflow scrolling.
-                        .fixedSize(horizontal: false, vertical: true)
-                        .padding(.horizontal, 6)
-                        .padding(.vertical, 4)
-                        .background(
-                            RoundedRectangle(cornerRadius: 5)
-                                .fill(Color.primary.opacity(0.05))
-                        )
-                        .overlay(
-                            RoundedRectangle(cornerRadius: 5)
-                                .strokeBorder(Color.primary.opacity(0.15), lineWidth: 0.5)
-                        )
-                        // Enter sends, Shift+Enter inserts a newline (the
-                        // default behaviour for a vertical-axis TextField).
-                        .onKeyPress(.return) {
-                            if NSEvent.modifierFlags.contains(.shift) {
+            ScrollViewReader { proxy in
+                ScrollView {
+                    VStack(alignment: .leading, spacing: 6) {
+                        if let preset = viewModel.selectedPreset, preset.requiresUserInput {
+                            // `.plain` (not `.roundedBorder`) because the
+                            // rounded-border style silently ignores
+                            // `axis: .vertical` and refuses to wrap, leaving
+                            // long input scrolling off the right edge. We
+                            // draw an equivalent border ourselves below.
+                            TextField(
+                                preset.userInputPlaceholder ?? "Instruction…",
+                                text: $viewModel.userInput,
+                                axis: .vertical
+                            )
+                            .textFieldStyle(.plain)
+                            // Generous upper bound — direct-prompt mode is
+                            // often used with multi-paragraph prompts and the
+                            // outer ScrollView can scroll past the field if
+                            // it ever does run out of vertical space.
+                            .lineLimit(1...30)
+                            .font(.system(size: fontSize))
+                            .focused($presetInputFocused)
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                            // Without this, a vertical-axis TextField sitting
+                            // inside a ScrollView reports a single-line height
+                            // for its intrinsic size and then scrolls its own
+                            // content internally as the user types. The cursor
+                            // stays visible but earlier lines clip off the top
+                            // of the visible field. `fixedSize(vertical:)`
+                            // forces the field to claim its full natural
+                            // height so the parent ScrollView (not the field)
+                            // owns any overflow scrolling.
+                            .fixedSize(horizontal: false, vertical: true)
+                            .padding(.horizontal, 6)
+                            .padding(.vertical, 4)
+                            .background(
+                                RoundedRectangle(cornerRadius: 5)
+                                    .fill(Color.primary.opacity(0.05))
+                            )
+                            .overlay(
+                                RoundedRectangle(cornerRadius: 5)
+                                    .strokeBorder(Color.primary.opacity(0.15), lineWidth: 0.5)
+                            )
+                            // Enter sends, Shift+Enter inserts a newline (the
+                            // default behaviour for a vertical-axis TextField).
+                            .onKeyPress(.return) {
+                                if NSEvent.modifierFlags.contains(.shift) {
+                                    return .ignored
+                                }
+                                if viewModel.canSend, !viewModel.isStreaming {
+                                    viewModel.send()
+                                    return .handled
+                                }
                                 return .ignored
                             }
-                            if viewModel.canSend, !viewModel.isStreaming {
-                                viewModel.send()
-                                return .handled
-                            }
-                            return .ignored
                         }
-                    }
 
-                    if viewModel.streamingText.isEmpty {
-                        if viewModel.isStreaming {
-                            ProgressView()
-                                .controlSize(.small)
-                                .padding(.top, 4)
-                        } else {
-                            emptyResponsePlaceholder
+                        transcript
+                    }
+                    .padding(.horizontal, 12)
+                    .padding(.top, 8)
+                    .padding(.bottom, 12)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                }
+                .frame(maxHeight: .infinity)
+                // When a follow-up question is appended, bring it to the top
+                // of the viewport so the answer streams in below it — the
+                // user reads the new exchange from its start instead of
+                // staring at the (unchanged) previous response.
+                .onChange(of: viewModel.latestUserTurnID) { _, newID in
+                    guard let newID else { return }
+                    DispatchQueue.main.async {
+                        withAnimation(.easeOut(duration: 0.2)) {
+                            proxy.scrollTo(newID, anchor: .top)
                         }
-                    } else {
-                        MarkdownResponseView(
-                            text: viewModel.streamingText,
-                            fontSize: fontSize,
-                            textOverrideColor: resolvedAppearance.foregroundColor
-                        )
                     }
                 }
-                .padding(.horizontal, 12)
-                .padding(.top, 8)
-                .padding(.bottom, 12)
-                .frame(maxWidth: .infinity, alignment: .leading)
             }
-            .frame(maxHeight: .infinity)
 
             // Floating action overlay — copy on hover, bottom-right.
             // Streaming is implicitly stopped by closing the panel
@@ -410,6 +412,72 @@ struct PanelView: View {
                 .opacity(0)
                 .accessibilityHidden(true)
         )
+    }
+
+    /// The conversation transcript: every completed exchange plus the
+    /// in-flight response. Assistant turns render as Markdown exactly like
+    /// the old single-response layout; follow-up questions render as a
+    /// visually distinct row (divider + tinted strip) so the eye can find
+    /// turn boundaries when scanning back.
+    @ViewBuilder
+    private var transcript: some View {
+        let turns = viewModel.conversationTurns
+        if turns.isEmpty {
+            if viewModel.isStreaming {
+                ProgressView()
+                    .controlSize(.small)
+                    .padding(.top, 4)
+            } else {
+                emptyResponsePlaceholder
+            }
+        } else {
+            ForEach(turns) { turn in
+                turnRow(turn)
+            }
+            // A follow-up was sent but the first token hasn't arrived yet —
+            // the transcript ends with the user's question, so show the
+            // spinner below it.
+            if viewModel.isStreaming, viewModel.streamingText.isEmpty {
+                ProgressView()
+                    .controlSize(.small)
+                    .padding(.top, 4)
+            }
+        }
+    }
+
+    @ViewBuilder
+    private func turnRow(_ turn: PanelViewModel.ConversationTurn) -> some View {
+        switch turn.kind {
+        case .assistant:
+            MarkdownResponseView(
+                text: turn.text,
+                fontSize: fontSize,
+                textOverrideColor: resolvedAppearance.foregroundColor
+            )
+        case .user:
+            VStack(alignment: .leading, spacing: 8) {
+                Divider()
+                HStack(alignment: .top, spacing: 6) {
+                    Image(systemName: "arrow.turn.down.right")
+                        .font(.system(size: max(fontSize - 4, 9), weight: .medium))
+                        .foregroundStyle(.tertiary)
+                        .padding(.top, 3)
+                    Text(turn.text)
+                        .font(.system(size: fontSize - 1, weight: .medium))
+                        .foregroundStyle(.secondary)
+                        .textSelection(.enabled)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                }
+                .padding(.horizontal, 8)
+                .padding(.vertical, 6)
+                .background(
+                    RoundedRectangle(cornerRadius: 6)
+                        .fill(Color.primary.opacity(0.05))
+                )
+            }
+            .padding(.top, 6)
+            .padding(.bottom, 2)
+        }
     }
 
     @ViewBuilder

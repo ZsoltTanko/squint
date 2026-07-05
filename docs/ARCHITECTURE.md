@@ -116,7 +116,9 @@ The capture skip in `AppDelegate.invokeFromHotkey(preset:)` and `invokeFromMenu(
 - Iterates `bytes.lines`, parses `data: …` lines, decodes each chunk's `choices[0].delta.content`, yields `LLMToken` values.
 - Logs `LLM stream request started`, `LLM headers received in N.NNs`, `LLM first delta in N.NNs` to the `com.inlinellmlens` logger subsystem so you can diagnose latency.
 
-**Response render.** `PanelViewModel` owns a `streamingText: String` that the SwiftUI view binds to. Tokens are appended on the main actor. When the stream finishes, the assistant message is appended to `conversation: [ChatMessage]` so follow-ups have full context.
+**Response render.** `PanelViewModel` owns a `streamingText: String` that accumulates the in-flight response. Tokens are appended on the main actor. When the stream finishes, the assistant message is appended to `conversation: [ChatMessage]` so follow-ups have full context.
+
+The panel renders the **full transcript**, not just the latest response. `PanelViewModel.conversationTurns` derives the display list from `conversation` + `streamingText`: the system message and the *first* user message are skipped (the first user message is the captured selection / preset input, already visible in the panel chrome), every later user message renders as a visually distinct follow-up row (divider + tinted strip in `PanelView.turnRow`), and assistant messages render as Markdown. The in-flight `streamingText` is appended as a synthetic assistant turn whose ID equals the conversation index it will occupy on completion, so SwiftUI keeps row identity stable across the stream-finished transition. When a follow-up is sent, the view scrolls the new question row to the top of the viewport (`onChange(of: latestUserTurnID)`) so the answer streams in below it. A restored history entry (which clears `conversation` but keeps `streamingText`) renders as a single assistant turn via a fallback branch.
 
 ## Key types
 

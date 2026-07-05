@@ -45,6 +45,65 @@ final class PanelViewModel: ObservableObject {
         bundle.selectedText.isEmpty ? manualSelectedText : bundle.selectedText
     }
 
+    /// One display row of the panel's transcript.
+    struct ConversationTurn: Identifiable, Equatable {
+        enum Kind: Equatable {
+            case user
+            case assistant
+        }
+
+        let id: Int
+        let kind: Kind
+        let text: String
+    }
+
+    /// The transcript the panel renders: every exchange so far, not just the
+    /// latest response. Derived from `conversation` (the LLM-context source
+    /// of truth) plus the in-flight `streamingText`, so the view never has
+    /// to reconcile the two itself.
+    ///
+    /// The system message and the *first* user message are skipped — the
+    /// first user message is the captured selection (or the preset's input
+    /// field), which is already visible in the panel chrome above the
+    /// response area; repeating it in the transcript would be noise.
+    /// Follow-up questions *are* included.
+    var conversationTurns: [ConversationTurn] {
+        var turns: [ConversationTurn] = []
+        var seenFirstUserMessage = false
+        for (index, message) in conversation.enumerated() {
+            switch message.role {
+            case .system:
+                continue
+            case .user:
+                if !seenFirstUserMessage {
+                    seenFirstUserMessage = true
+                    continue
+                }
+                turns.append(ConversationTurn(id: index, kind: .user, text: message.content))
+            case .assistant:
+                turns.append(ConversationTurn(id: index, kind: .assistant, text: message.content))
+            }
+        }
+        if isStreaming, !streamingText.isEmpty {
+            // In-flight response. Its id is the conversation index the
+            // assistant message will occupy once the stream completes, so
+            // SwiftUI keeps the same row identity across the transition.
+            turns.append(ConversationTurn(id: conversation.count, kind: .assistant, text: streamingText))
+        } else if turns.isEmpty, !streamingText.isEmpty {
+            // Restored history entry: `applyHistoryEntry` clears
+            // `conversation` but keeps the recorded response in
+            // `streamingText`.
+            turns.append(ConversationTurn(id: 0, kind: .assistant, text: streamingText))
+        }
+        return turns
+    }
+
+    /// ID of the most recent follow-up question row, used by the view to
+    /// scroll a just-sent follow-up into view.
+    var latestUserTurnID: Int? {
+        conversationTurns.last(where: { $0.kind == .user })?.id
+    }
+
     var selectedPreset: PromptPreset? {
         presetStore.preset(byID: selectedPresetID) ?? presetStore.defaultPreset
     }
