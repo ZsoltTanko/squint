@@ -1,4 +1,4 @@
-# Inline LLM Lens
+# Squint
 
 A native macOS menu-bar utility that turns selected text anywhere on screen into a lightweight, configurable, inline LLM interaction without opening a browser or full chat app.
 
@@ -14,13 +14,13 @@ The product is positioned as **an inline semantic lens**, closer to Spotlight / 
 
 1. Install [XcodeGen](https://github.com/yonaskolb/XcodeGen) once: `brew install xcodegen`.
 2. Generate the Xcode project: `xcodegen generate`.
-3. `open InlineLLMLens.xcodeproj`, hit Cmd+R.
+3. `open Squint.xcodeproj`, hit Cmd+R.
 4. The app appears in the menu bar (no Dock icon — it's an `LSUIElement` agent).
 5. Click the menu-bar icon → **Settings…** → **Models** → **+ Add Model** to configure your provider (OpenAI, OpenRouter, Ollama, LM Studio, etc.). API keys are stored in the macOS Keychain.
 6. Click **Settings… → Permissions** to grant Accessibility access (only required for the global-hotkey path).
 7. Select text in any app and either:
    - Press **Option+Space** (configurable in Settings → General), or
-   - Right-click → **Services → Ask Inline LLM**.
+   - Right-click → **Services → Ask Squint**.
 
 Three prompt presets ship seeded on first launch, covering the app's three input modalities:
 
@@ -83,14 +83,14 @@ Then read these in order:
 ```text
 text-select-llm/
 ├── README.md                  This file
-├── project.yml                XcodeGen spec; generates InlineLLMLens.xcodeproj
+├── project.yml                XcodeGen spec; generates Squint.xcodeproj
 ├── .gitignore
 ├── docs/
 │   ├── ARCHITECTURE.md
 │   ├── DEVELOPMENT.md
 │   ├── EXTENDING.md
 │   └── TROUBLESHOOTING.md
-├── InlineLLMLens/             Application source (Swift, organized by feature module)
+├── Squint/                    Application source (Swift, organized by feature module)
 │   ├── App/                   App entry point, AppDelegate, Info.plist, entitlements
 │   ├── MenuBar/               NSStatusItem + menu
 │   ├── Hotkey/                Global hotkey via KeyboardShortcuts SPM package
@@ -105,7 +105,7 @@ text-select-llm/
 │   ├── Settings/              SwiftUI Settings scene (5 tabs incl. Prompts)
 │   ├── Onboarding/            First-launch onboarding window
 │   └── Util/                  Logger, debouncer, launch-at-login
-└── InlineLLMLensTests/        XCTest unit tests
+└── SquintTests/               XCTest unit tests
 ```
 
 ## High-level architecture

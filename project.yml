@@ -1,6 +1,6 @@
-name: InlineLLMLens
+name: Squint
 options:
-  bundleIdPrefix: com.inlinellmlens
+  bundleIdPrefix: com.zsolttanko
   deploymentTarget:
     macOS: "14.0"
   createIntermediateGroups: true
@@ -22,37 +22,37 @@ settings:
     ENABLE_HARDENED_RUNTIME: YES
 
 targets:
-  InlineLLMLens:
+  Squint:
     type: application
     platform: macOS
     sources:
-      - path: InlineLLMLens
+      - path: Squint
     info:
-      path: InlineLLMLens/App/Info.plist
+      path: Squint/App/Info.plist
       properties:
         LSUIElement: true
-        CFBundleName: Inline LLM Lens
-        CFBundleDisplayName: Inline LLM Lens
+        CFBundleName: Squint
+        CFBundleDisplayName: Squint
         CFBundleShortVersionString: "0.1.0"
         CFBundleVersion: "1"
         NSHumanReadableCopyright: ""
-        NSAccessibilityUsageDescription: "Inline LLM Lens reads selected text from the focused app to send to your configured LLM."
+        NSAccessibilityUsageDescription: "Squint reads selected text from the focused app to send to your configured LLM."
         NSServices:
           - NSMenuItem:
-              default: Ask Inline LLM
-            NSMessage: askInlineLLM
-            NSPortName: InlineLLMLens
+              default: Ask Squint
+            NSMessage: askSquint
+            NSPortName: Squint
             NSSendTypes:
               - NSStringPboardType
               - public.utf8-plain-text
     entitlements:
-      path: InlineLLMLens/App/InlineLLMLens.entitlements
+      path: Squint/App/Squint.entitlements
       properties:
         com.apple.security.app-sandbox: false
         com.apple.security.network.client: true
     settings:
       base:
-        PRODUCT_BUNDLE_IDENTIFIER: com.inlinellmlens.app
+        PRODUCT_BUNDLE_IDENTIFIER: com.zsolttanko.squint
         GENERATE_INFOPLIST_FILE: NO
         COMBINE_HIDPI_IMAGES: YES
     dependencies:
@@ -60,14 +60,14 @@ targets:
       - package: MarkdownUI
         product: MarkdownUI
 
-  InlineLLMLensTests:
+  SquintTests:
     type: bundle.unit-test
     platform: macOS
     sources:
-      - path: InlineLLMLensTests
+      - path: SquintTests
     settings:
       base:
-        PRODUCT_BUNDLE_IDENTIFIER: com.inlinellmlens.tests
+        PRODUCT_BUNDLE_IDENTIFIER: com.zsolttanko.squint.tests
         GENERATE_INFOPLIST_FILE: YES
     dependencies:
-      - target: InlineLLMLens
+      - target: Squint

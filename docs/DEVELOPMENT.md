@@ -6,7 +6,7 @@ This document covers everything you need to set up a workstation, build the app,
 
 - **macOS 14 (Sonoma) or newer** — the deployment target. Development was done on macOS 26.
 - **Xcode 15 or newer** — installed from the Mac App Store, *not* just the Command Line Tools. `xcodebuild` against an `.app` target requires the full Xcode app.
-- **XcodeGen** — `brew install xcodegen`. Used to regenerate `InlineLLMLens.xcodeproj` from `project.yml`. The `.xcodeproj` is gitignored.
+- **XcodeGen** — `brew install xcodegen`. Used to regenerate `Squint.xcodeproj` from `project.yml`. The `.xcodeproj` is gitignored.
 - **An LLM provider account** — any OpenAI Chat Completions-compatible endpoint will work. Get an OpenAI API key from <https://platform.openai.com/api-keys>, or run a local model via [Ollama](https://ollama.com/) and skip the cloud entirely.
 
 First-time Xcode setup gotchas:
@@ -23,15 +23,15 @@ If you skip these you'll get cryptic errors about missing `CoreSimulator` framew
 
 ```bash
 xcodegen generate
-open InlineLLMLens.xcodeproj
+open Squint.xcodeproj
 ```
 
 `project.yml` is the source of truth — it declares the app target, deployment target, `Info.plist` template (including `LSUIElement` and the `NSServices` entry), entitlements, SPM dependencies, and the test target. Edit it, regenerate, commit `project.yml` (never the `.xcodeproj`).
 
 ## Build and run from the IDE
 
-1. Open `InlineLLMLens.xcodeproj` in Xcode.
-2. Select the `InlineLLMLens` scheme.
+1. Open `Squint.xcodeproj` in Xcode.
+2. Select the `Squint` scheme.
 3. Cmd+R. The app will build, sign with an ad-hoc identity, and launch.
 4. The app is `LSUIElement` so it appears only in the menu bar — no Dock icon.
 
@@ -41,14 +41,14 @@ To stop it, click the menu-bar icon → **Quit**, or use Xcode's stop button.
 
 ```bash
 # Resolve SPM packages once (or after editing project.yml)
-xcodebuild -project InlineLLMLens.xcodeproj \
-           -scheme InlineLLMLens \
+xcodebuild -project Squint.xcodeproj \
+           -scheme Squint \
            -destination 'platform=macOS' \
            -resolvePackageDependencies
 
 # Build
-xcodebuild -project InlineLLMLens.xcodeproj \
-           -scheme InlineLLMLens \
+xcodebuild -project Squint.xcodeproj \
+           -scheme Squint \
            -configuration Debug \
            -destination 'platform=macOS' \
            -derivedDataPath build \
@@ -56,7 +56,7 @@ xcodebuild -project InlineLLMLens.xcodeproj \
            build
 
 # Run the built app
-open build/Build/Products/Debug/InlineLLMLens.app
+open build/Build/Products/Debug/Squint.app
 ```
 
 The `CODE_SIGNING_ALLOWED=NO` flag lets you build without a development team for local development.
@@ -71,8 +71,8 @@ When iterating quickly on `Capture/`, `Panel/`, `LLM/`, or anything else where y
 
 It does, in order:
 
-1. Regenerates `InlineLLMLens.xcodeproj` if `project.yml` is newer (skipped otherwise).
-2. `killall InlineLLMLens` — terminates any running copy.
+1. Regenerates `Squint.xcodeproj` if `project.yml` is newer (skipped otherwise).
+2. `killall Squint` — terminates any running copy.
 3. `xcodebuild … build` against the macOS Debug configuration with code signing disabled.
 4. `lsregister -f` + `pbs -update` against the freshly built `.app` so Launch Services and the right-click Services menu point at the new bundle.
 5. `open` the rebuilt `.app`, then verifies the process is alive.
@@ -89,8 +89,8 @@ A few things to keep in mind:
 ## Run tests
 
 ```bash
-xcodebuild -project InlineLLMLens.xcodeproj \
-           -scheme InlineLLMLens \
+xcodebuild -project Squint.xcodeproj \
+           -scheme Squint \
            -configuration Debug \
            -destination 'platform=macOS' \
            -derivedDataPath build \
@@ -100,7 +100,7 @@ xcodebuild -project InlineLLMLens.xcodeproj \
 
 Or in Xcode: Cmd+U.
 
-The test bundle (`InlineLLMLensTests/`) covers the pure-Swift parts:
+The test bundle (`SquintTests/`) covers the pure-Swift parts:
 
 - `PromptBuilderTests` — prompt assembly across modes, follow-up appending, app-context inclusion.
 - `OpenAICompatibleClientTests` — `complete` / `streamResponse` against a `URLProtocol` stub, including SSE parsing, missing-API-key handling, and HTTP error surfacing.
@@ -114,18 +114,18 @@ UI, Services, hotkey, and Accessibility paths are deliberately not unit-tested �
 
 ### Logging
 
-Everything notable goes through `AppLogger` (`Util/Logger.swift`), which writes to `os.Logger(subsystem: "com.inlinellmlens", category: "app")`.
+Everything notable goes through `AppLogger` (`Util/Logger.swift`), which writes to `os.Logger(subsystem: "com.zsolttanko.squint", category: "app")`.
 
 Live tail in a terminal while you reproduce an issue:
 
 ```bash
-log stream --predicate 'subsystem == "com.inlinellmlens"' --level info
+log stream --predicate 'subsystem == "com.zsolttanko.squint"' --level info
 ```
 
 Window of past logs:
 
 ```bash
-log show --predicate 'subsystem == "com.inlinellmlens"' --info --last 5m
+log show --predicate 'subsystem == "com.zsolttanko.squint"' --info --last 5m
 ```
 
 The streaming client emits three timing breadcrumbs per LLM request, useful for diagnosing TTFT issues:
@@ -164,26 +164,26 @@ Settings window also supports `Esc` to close (private `SettingsWindow` subclass 
 
 ```bash
 # Configured models
-cat ~/Library/Application\ Support/InlineLLMLens/models.json | jq
+cat ~/Library/Application\ Support/Squint/models.json | jq
 
 # Per-preset query history (powers the panel's recent-queries dropdown)
-cat ~/Library/Application\ Support/InlineLLMLens/query-history.json | jq
+cat ~/Library/Application\ Support/Squint/query-history.json | jq
 
 # Full opt-in history (only present when the toggle in Settings → General is on)
-cat ~/Library/Application\ Support/InlineLLMLens/history.json | jq
+cat ~/Library/Application\ Support/Squint/history.json | jq
 
 # UserDefaults
-defaults read com.inlinellmlens.app
+defaults read com.zsolttanko.squint
 ```
 
-To inspect or remove API keys: open **Keychain Access.app** → the **login** keychain → search for `com.inlinellmlens`. One generic-password entry per model, with the model's UUID as account.
+To inspect or remove API keys: open **Keychain Access.app** → the **login** keychain → search for `com.zsolttanko.squint`. One generic-password entry per model, with the model's UUID as account.
 
 ### Reset the app to first-launch state
 
 ```bash
-killall InlineLLMLens 2>/dev/null
-defaults delete com.inlinellmlens.app
-rm -rf ~/Library/Application\ Support/InlineLLMLens
+killall Squint 2>/dev/null
+defaults delete com.zsolttanko.squint
+rm -rf ~/Library/Application\ Support/Squint
 # Optionally remove keychain entries via Keychain Access (manual)
 ```
 
@@ -191,7 +191,7 @@ Then relaunch. You'll see the onboarding window.
 
 ### Reset Accessibility permission
 
-If a stale `InlineLLMLens` row is stuck in **System Settings → Privacy & Security → Accessibility**:
+If a stale `Squint` row is stuck in **System Settings → Privacy & Security → Accessibility**:
 
 1. Open the pane.
 2. Select the row, click `–`, confirm.
@@ -207,13 +207,13 @@ This is a system-level constraint, not a bug in the app. See [`TROUBLESHOOTING.m
 Services entries are cached. After rebuilding the app, the Services menu in *consuming* apps (TextEdit, Notes, Safari, …) won't show the new entry until you re-register and the consuming app is relaunched:
 
 ```bash
-APP="$(pwd)/build/Build/Products/Debug/InlineLLMLens.app"
+APP="$(pwd)/build/Build/Products/Debug/Squint.app"
 /System/Library/Frameworks/CoreServices.framework/Versions/A/Frameworks/LaunchServices.framework/Versions/A/Support/lsregister -f "$APP"
 /System/Library/CoreServices/pbs -update
 # Then quit and relaunch the consuming app (e.g. TextEdit)
 ```
 
-If the Service still doesn't appear, open **System Settings → Keyboard → Keyboard Shortcuts → Services → Text** and ensure **Ask Inline LLM** is ticked. macOS hides Services the user hasn't enabled.
+If the Service still doesn't appear, open **System Settings → Keyboard → Keyboard Shortcuts → Services → Text** and ensure **Ask Squint** is ticked. macOS hides Services the user hasn't enabled.
 
 ## Code style
 

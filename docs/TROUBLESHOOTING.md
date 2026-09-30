@@ -11,7 +11,7 @@ These are the macOS-integration potholes this project has hit during development
 Tail the log for everything:
 
 ```bash
-log stream --predicate 'subsystem == "com.inlinellmlens"' --level info
+log stream --predicate 'subsystem == "com.zsolttanko.squint"' --level info
 ```
 
 ---
@@ -27,7 +27,7 @@ Press the global hotkey with text selected, the panel opens, but the selection i
 The hotkey path uses macOS Accessibility APIs, which require **Accessibility permission** for the app's bundle.
 
 1. Press the hotkey **once** with the app running. A system dialog should appear asking for Accessibility access. Click **Open System Settings**.
-2. In **Privacy & Security → Accessibility**, toggle the `InlineLLMLens` row on.
+2. In **Privacy & Security → Accessibility**, toggle the `Squint` row on.
 3. **Quit the app** (menu-bar icon → Quit) and **relaunch** it. AX trust is cached at process start; the running process never sees the new permission until it restarts.
 4. Press the hotkey again with text selected. The orange dot in the panel header should disappear, and the log should show `capture: accessibility`.
 
@@ -36,7 +36,7 @@ The hotkey path uses macOS Accessibility APIs, which require **Accessibility per
 Sometimes a previous build's bundle is still in the Accessibility list and the system uses *that* row's setting:
 
 1. Open **System Settings → Privacy & Security → Accessibility**.
-2. Select any `InlineLLMLens` row, click **–**, confirm.
+2. Select any `Squint` row, click **–**, confirm.
 3. Quit the app, relaunch, press the hotkey to re-trigger the prompt, re-grant. Quit and relaunch one more time.
 
 ### If AX is granted but capture is still empty
@@ -49,7 +49,7 @@ That means the source app doesn't expose selected text via AX. Known cases:
 
 Workarounds for these apps:
 
-- Use **right-click → Services → Ask Inline LLM** instead. Services are populated by the source app via the system pasteboard, which web/terminal/Electron apps do support.
+- Use **right-click → Services → Ask Squint** instead. Services are populated by the source app via the system pasteboard, which web/terminal/Electron apps do support.
 - Or enable **Settings → Capture → "Enable clipboard fallback"** (off by default per spec). When AX returns nothing, the app simulates Cmd+C, reads the clipboard, and restores it. Works in Chrome and most other apps but is invasive — it briefly takes over the system pasteboard.
 
 Native AppKit text views (TextEdit, Notes, Mail composer, Messages, Pages, Xcode editors) work via AX directly.
@@ -60,7 +60,7 @@ Native AppKit text views (TextEdit, Notes, Mail composer, Messages, Pages, Xcode
 
 ### Symptom
 
-Select text in any app, right-click → Services. "Ask Inline LLM" is missing.
+Select text in any app, right-click → Services. "Ask Squint" is missing.
 
 ### Cause and fix
 
@@ -69,7 +69,7 @@ macOS Services discovery is two layers of cache. Both can be stale.
 **Layer 1: Launch Services index.** The app must be registered with Launch Services. This happens automatically for apps in `/Applications`, but for dev builds in `<repo>/build/Build/Products/Debug/` you need to nudge it:
 
 ```bash
-APP="$(pwd)/build/Build/Products/Debug/InlineLLMLens.app"
+APP="$(pwd)/build/Build/Products/Debug/Squint.app"
 /System/Library/Frameworks/CoreServices.framework/Versions/A/Frameworks/LaunchServices.framework/Versions/A/Support/lsregister -f "$APP"
 /System/Library/CoreServices/pbs -update
 ```
@@ -83,27 +83,27 @@ If the Services system is really stuck:
 
 **Layer 2: Per-app cache.** Each *consuming* app reads the Services menu when it launches. After registering, you must **quit and relaunch the consuming app** (TextEdit, Notes, …) before the new entry appears in *its* Services menu.
 
-**Layer 3: User opt-in.** macOS hides text-Services the user hasn't enabled. Open **System Settings → Keyboard → Keyboard Shortcuts → Services**, scroll to **Text** at the bottom, ensure **Ask Inline LLM** is ticked.
+**Layer 3: User opt-in.** macOS hides text-Services the user hasn't enabled. Open **System Settings → Keyboard → Keyboard Shortcuts → Services**, scroll to **Text** at the bottom, ensure **Ask Squint** is ticked.
 
 ### Where the Services entry actually appears
 
 Different apps surface Services differently:
 
 - Right-click in TextEdit, Notes, Mail: usually a top-level **Services** submenu near the bottom of the context menu.
-- The application menu always works: e.g. **TextEdit → Services → Ask Inline LLM**.
+- The application menu always works: e.g. **TextEdit → Services → Ask Squint**.
 - Some browsers and Electron apps put Services very low in the context menu or omit them.
 
 ### Verify the Service is registered at the system level
 
 ```bash
-/System/Library/CoreServices/pbs -dump_pboard | grep -A4 askInlineLLM
+/System/Library/CoreServices/pbs -dump_pboard | grep -A4 askSquint
 ```
 
 You should see:
 
 ```
-NSMessage = askInlineLLM;
-NSPortName = InlineLLMLens;
+NSMessage = askSquint;
+NSPortName = Squint;
 NSSendTypes = (
     "public.utf8-plain-text",
     NSStringPboardType
@@ -134,7 +134,7 @@ If Settings still won't open, check:
 
 ### Fix in code
 
-Look at `InlineLLMLens/App/AppDelegate.swift`. The pattern is:
+Look at `Squint/App/AppDelegate.swift`. The pattern is:
 
 ```swift
 static func openSettings() {
@@ -214,7 +214,7 @@ User selects text, hits the hotkey, the panel opens with a spinner, but tokens d
 Trigger one request and read the timing logs:
 
 ```bash
-log show --predicate 'subsystem == "com.inlinellmlens"' --info --last 2m | grep "LLM"
+log show --predicate 'subsystem == "com.zsolttanko.squint"' --info --last 2m | grep "LLM"
 ```
 
 You'll see three lines:
@@ -271,7 +271,7 @@ Another app or system component is registered for the same shortcut globally. ma
 
 ### Cause
 
-The entitlements file (`InlineLLMLens/App/InlineLLMLens.entitlements`) sets `com.apple.security.app-sandbox = false`, which is required for arbitrary-host network access without a per-host exception. If you (or a future release pipeline) re-enable the sandbox, you must add explicit network entitlements and may need to handle TCC flows for outbound connections.
+The entitlements file (`Squint/App/Squint.entitlements`) sets `com.apple.security.app-sandbox = false`, which is required for arbitrary-host network access without a per-host exception. If you (or a future release pipeline) re-enable the sandbox, you must add explicit network entitlements and may need to handle TCC flows for outbound connections.
 
 For MAS distribution this becomes mandatory and substantially restructures the entitlements story. Don't enable the sandbox casually for development.
 
@@ -304,7 +304,7 @@ Mirror this pattern for any new test that touches stored state.
 
 If iterative `xcodebuild` runs seem to use stale code:
 
-1. Quit the app (`killall InlineLLMLens`).
+1. Quit the app (`killall Squint`).
 2. Delete `build/`.
 3. Re-run `xcodegen generate` if you edited `project.yml`.
 4. Rebuild.

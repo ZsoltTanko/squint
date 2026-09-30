@@ -1,6 +1,6 @@
 # Architecture
 
-This document explains how the Inline LLM Lens codebase is organized, how a single user invocation flows end-to-end, and the conventions you should follow when extending it.
+This document explains how the Squint codebase is organized, how a single user invocation flows end-to-end, and the conventions you should follow when extending it.
 
 ## Guiding principles
 
@@ -11,7 +11,7 @@ This document explains how the Inline LLM Lens codebase is organized, how a sing
 
 ## Module map
 
-The codebase is organized by feature module under `InlineLLMLens/`. Each module is a folder; inter-module dependencies flow downward in the list below (no module depends on a module above it):
+The codebase is organized by feature module under `Squint/`. Each module is a folder; inter-module dependencies flow downward in the list below (no module depends on a module above it):
 
 | Module | Purpose |
 | --- | --- |
@@ -23,12 +23,12 @@ The codebase is organized by feature module under `InlineLLMLens/`. Each module 
 | `Prompts/` | `PromptPreset` (user-defined recipe: system prompt + behavior flags + optional model / inference overrides + per-preset hotkey) and `PromptPresetStore` (CRUD, persistence, import/export). |
 | `Capture/` | `ContextBundle` and `CaptureMethod` data types, individual capture strategies (`AccessibilityCapture`, `ClipboardFallbackCapture`, `ManualInputCapture`), and the orchestrating `SelectionCaptureService`. |
 | `Hotkey/` | `HotkeyManager` (thin wrapper over the `KeyboardShortcuts` SPM package) and `ShortcutNames` (typed shortcut identifiers). |
-| `Services/` | `ServicesHandler` — exposes the `@objc askInlineLLM(_:userData:error:)` selector that macOS Services calls. |
+| `Services/` | `ServicesHandler` — exposes the `@objc askSquint(_:userData:error:)` selector that macOS Services calls. |
 | `MenuBar/` | `MenuBarController` — owns the `NSStatusItem` and its `NSMenu`. |
 | `Panel/` | The floating response panel: `FloatingPanel` (borderless `NSPanel`, with `cancelOperation(_:)` + `performKeyEquivalent(with:)` overrides for panel-level Esc / ⌘C handling), `FloatingPanelController` (wires Esc + ⌘C fallback, observes `didResignKeyNotification` for click-off behaviour, applies `panel.level` and `NSApp.activationPolicy` per the user's setting, persists user-initiated resizes back to the active preset via `didEndLiveResize`), `PanelPositioner` (near-cursor / centered-on-cursor / centered-on-screen, with optional per-invocation `sizeOverride`), `PanelAppearanceResolver` (translates the appearance setting — system / light / dark / custom hex — into background fill, text-color override, and forced `ColorScheme`), `PanelView` (SwiftUI — chromeless, response-first layout, with `.onKeyPress(.return)` wiring so bare Return sends in the preset input field, ⌘+/⌘− shortcuts that mutate `SettingsStore.panelFontSize`, and a small clock-icon `Menu` driven by `QueryHistoryStore`), `PanelViewModel`, plus subviews (`PresetPicker`, `ModelPicker`, `MarkdownResponseView`). |
 | `Settings/` | AppKit-owned settings window (`SettingsWindowController` — an `NSWindow` + `NSHostingController` hosting `SettingsRoot`) with five tabs: General, Models, Prompts, Capture, Permissions. Deliberately not the SwiftUI `Settings { }` scene — see the "App lifecycle and activation policy" section below for rationale. |
 | `Onboarding/` | First-launch onboarding window. |
-| `App/` | Entry point: `InlineLLMLensApp` (SwiftUI `@main`), `AppDelegate` (wires everything together), `Info.plist`, entitlements. |
+| `App/` | Entry point: `SquintApp` (SwiftUI `@main`), `AppDelegate` (wires everything together), `Info.plist`, entitlements. |
 
 ## Request pipeline
 
@@ -38,8 +38,8 @@ A single invocation flows through these stages:
 flowchart TD
   subgraph EntryPoints
     HK[HotkeyManager: .invokePanel fires]
-    SV["ServicesHandler: askInlineLLM(_:_:_)"]
-    MB[MenuBarController: Ask Inline LLM]
+    SV["ServicesHandler: askSquint(_:_:_)"]
+    MB[MenuBarController: Ask Squint]
   end
 
   HK --> AD1[AppDelegate.invokeFromHotkey]
@@ -114,7 +114,7 @@ The capture skip in `AppDelegate.invokeFromHotkey(preset:)` and `invokeFromMenu(
 - Authorization: `Bearer <key>`, except for `localhost` / `127.0.0.1` / `::1` hosts where the key is optional (Ollama, LM Studio).
 - Uses a dedicated URLSession (`makeStreamingSession`) with `urlCache = nil` and `requestCachePolicy = .reloadIgnoringLocalCacheData` — `URLSession.shared`'s default cache buffers chunked SSE responses.
 - Iterates `bytes.lines`, parses `data: …` lines, decodes each chunk's `choices[0].delta.content`, yields `LLMToken` values.
-- Logs `LLM stream request started`, `LLM headers received in N.NNs`, `LLM first delta in N.NNs` to the `com.inlinellmlens` logger subsystem so you can diagnose latency.
+- Logs `LLM stream request started`, `LLM headers received in N.NNs`, `LLM first delta in N.NNs` to the `com.zsolttanko.squint` logger subsystem so you can diagnose latency.
 
 **Response render.** `PanelViewModel` owns a `streamingText: String` that accumulates the in-flight response. Tokens are appended on the main actor. When the stream finishes, the assistant message is appended to `conversation: [ChatMessage]` so follow-ups have full context.
 
@@ -146,7 +146,7 @@ These are the few types you should internalize before changing anything:
 
 The app is an `LSUIElement` (no Dock icon) menu-bar agent. Default activation policy is `.accessory`. **Two subsystems flip the policy to `.regular` while their windows are alive** and revert on close: the Settings window and (depending on the user's click-off setting) the floating panel itself. They cooperate via a small "do I currently need `.regular`?" check so neither yanks the policy out from under the other.
 
-**Settings window.** We deliberately do **not** use SwiftUI's `Settings { }` scene. It was flakey to reopen under `.accessory` activation policy — the previous implementation used a 100 ms delay and `NSApp.sendAction(Selector(("showSettingsWindow:")), …)` to work around it, had to close the floating panel before opening Settings, and still wouldn't reliably reopen from the panel's gear button. `InlineLLMLensApp.body` now contains an empty `Settings { EmptyView() }` purely to satisfy the `App` protocol, and Settings is instead owned by `SettingsWindowController` — a singleton wrapping an `NSWindow` + `NSHostingController(rootView: SettingsRoot())`.
+**Settings window.** We deliberately do **not** use SwiftUI's `Settings { }` scene. It was flakey to reopen under `.accessory` activation policy — the previous implementation used a 100 ms delay and `NSApp.sendAction(Selector(("showSettingsWindow:")), …)` to work around it, had to close the floating panel before opening Settings, and still wouldn't reliably reopen from the panel's gear button. `SquintApp.body` now contains an empty `Settings { EmptyView() }` purely to satisfy the `App` protocol, and Settings is instead owned by `SettingsWindowController` — a singleton wrapping an `NSWindow` + `NSHostingController(rootView: SettingsRoot())`.
 
 `AppDelegate.openSettings()` does just three things:
 
@@ -181,7 +181,7 @@ Note: under `.accessory` policy the macOS top menu bar still belongs to whatever
 
 **Per-preset query history.** `QueryHistoryStore` is a `@MainActor ObservableObject` keyed by `presetID` → `[QueryHistoryEntry]`. Each entry captures the effective selection text, the user-input field, the streamed response, and the model UUID — enough to repaint the panel exactly as the user saw it on the original invocation. Recording happens at the end of `PanelViewModel.runRequest`'s success branch (cancelled or errored streams don't pollute the dropdown). Move-to-top dedupe is keyed on `(text, userInput)` so re-asking with a different instruction stores a distinct entry. The dropdown in `PanelView.queryHistoryMenu` is a `Menu` with `.menuStyle(.borderlessButton).menuIndicator(.hidden).fixedSize()` so it occupies ~18pt at its host site and doesn't expand the row's footprint. The dropdown lives in two places depending on the active preset's `capturesSelection`: the trailing edge of the selection-preview row for capturing presets, or the panel header strip for direct-prompt presets (which have no selection-preview row). `applyHistoryEntry(_:)` restores selection / user-input / response / model and clears any prior streaming/error state — ⌘↵ then re-asks fresh. The cap is `SettingsStore.queryHistoryLimit` (default 10, range 0–50; 0 disables recording and hides the dropdown).
 
-**Factory-seed migration.** `PromptPresetStore.init` runs `installNewFactorySeedsIfNeeded()` whenever an existing `prompts.json` is loaded. Each `PromptPreset.factorySeeds` entry is identified by its stable `name` and recorded in `UserDefaults` under `InlineLLMLens.installedFactorySeedNames` (JSON-encoded `[String]`) the first time the catalog sees it. A seed is appended to the user's catalog only when *both* checks pass: its name has never been recorded as offered before, *and* no preset with that name currently exists. The "currently exists" guard is load-bearing only on first migration (when the tracking key is empty and the user already has the legacy seeds on disk under their factory names) — afterwards the offered-set covers it. Once recorded as offered, a seed is never reinstalled, so a seed the user later deletes stays gone. Two regression tests in `PromptPresetStoreTests` (`testMigrationInstallsNewFactorySeedsForExistingCatalog`, `testMigrationDoesNotReinstallDeletedSeeds`) lock the behavior in.
+**Factory-seed migration.** `PromptPresetStore.init` runs `installNewFactorySeedsIfNeeded()` whenever an existing `prompts.json` is loaded. Each `PromptPreset.factorySeeds` entry is identified by its stable `name` and recorded in `UserDefaults` under `Squint.installedFactorySeedNames` (JSON-encoded `[String]`) the first time the catalog sees it. A seed is appended to the user's catalog only when *both* checks pass: its name has never been recorded as offered before, *and* no preset with that name currently exists. The "currently exists" guard is load-bearing only on first migration (when the tracking key is empty and the user already has the legacy seeds on disk under their factory names) — afterwards the offered-set covers it. Once recorded as offered, a seed is never reinstalled, so a seed the user later deletes stays gone. Two regression tests in `PromptPresetStoreTests` (`testMigrationInstallsNewFactorySeedsForExistingCatalog`, `testMigrationDoesNotReinstallDeletedSeeds`) lock the behavior in.
 
 **Hotkey handler registration.** `KeyboardShortcuts.onKeyDown(for:)` is *additive* — calling it twice for the same `Name` installs two handlers, and the library has no public per-name handler-removal API. `HotkeyManager.syncPresetHotkeys(...)` therefore calls `KeyboardShortcuts.removeAllHandlers()` first, then re-registers the global and per-preset handlers in one go. Any caller that wants to change bindings must go through `syncPresetHotkeys(...)`. The subscription to `presetStore.$presets` uses `.dropFirst()` so the synchronous current-value emission doesn't double-register at launch. Missing this detail previously caused per-preset hotkeys to fire multiple times per keypress, presenting the panel concurrently and appearing to crash the app.
 
@@ -192,14 +192,14 @@ Persisted state lives in three places:
 | What | Where | Format |
 | --- | --- | --- |
 | User preferences (autoSend, streamResponses, panelFontSize, panelPlacement, panelClickOffBehavior, panelAppearanceMode, panelCustomBackgroundHex, panelCustomTextHex, queryHistoryLimit, …) | `UserDefaults.standard` (keys under `settings.*`) | Native types / raw strings for enums |
-| Configured models | `~/Library/Application Support/InlineLLMLens/models.json` | JSON, `[ModelConfig]` |
-| Prompt presets | `~/Library/Application Support/InlineLLMLens/prompts.json` | JSON, `[PromptPreset]` (includes optional per-preset `panelWidth`/`panelHeight`) |
-| API keys | macOS login Keychain, service `com.inlinellmlens`, account `<ModelConfig.id.uuidString>` | Generic password (`kSecClassGenericPassword`) |
-| Per-preset query history (on by default; cap configurable, 0 disables) | `~/Library/Application Support/InlineLLMLens/query-history.json` | JSON, `[UUID: [QueryHistoryEntry]]` keyed by preset ID |
-| Full local history (opt-in) | `~/Library/Application Support/InlineLLMLens/history.json` | JSON, `[LocalHistoryItem]` (each carries a `PromptResolution` snapshot) |
-| Default model id | `UserDefaults` key `InlineLLMLens.defaultModelID` | UUID string |
-| Default preset id | `UserDefaults` key `InlineLLMLens.defaultPresetID` | UUID string |
-| Installed factory-seed names (migration ledger) | `UserDefaults` key `InlineLLMLens.installedFactorySeedNames` | JSON-encoded `[String]` |
+| Configured models | `~/Library/Application Support/Squint/models.json` | JSON, `[ModelConfig]` |
+| Prompt presets | `~/Library/Application Support/Squint/prompts.json` | JSON, `[PromptPreset]` (includes optional per-preset `panelWidth`/`panelHeight`) |
+| API keys | macOS login Keychain, service `com.zsolttanko.squint`, account `<ModelConfig.id.uuidString>` | Generic password (`kSecClassGenericPassword`) |
+| Per-preset query history (on by default; cap configurable, 0 disables) | `~/Library/Application Support/Squint/query-history.json` | JSON, `[UUID: [QueryHistoryEntry]]` keyed by preset ID |
+| Full local history (opt-in) | `~/Library/Application Support/Squint/history.json` | JSON, `[LocalHistoryItem]` (each carries a `PromptResolution` snapshot) |
+| Default model id | `UserDefaults` key `Squint.defaultModelID` | UUID string |
+| Default preset id | `UserDefaults` key `Squint.defaultPresetID` | UUID string |
+| Installed factory-seed names (migration ledger) | `UserDefaults` key `Squint.installedFactorySeedNames` | JSON-encoded `[String]` |
 | Per-preset hotkeys | `UserDefaults` keys `KeyboardShortcuts.<prompt.preset.<uuid>>` | Managed by the KeyboardShortcuts SPM package |
 
 `ModelStore` and `KeychainStore` both accept injectable `UserDefaults` / service identifiers in their initializers so tests can isolate from system state.
@@ -207,13 +207,13 @@ Persisted state lives in three places:
 ## Diagnostics surface
 
 - The floating panel **no longer has a diagnostics footer**. AX trust state is surfaced as a small orange dot in the panel header (next to the gear icon) with a tooltip explaining the impact. All other capture metadata is available via logs.
-- All notable events go through `AppLogger` (`Util/Logger.swift`), which writes to `os.Logger(subsystem: "com.inlinellmlens", category: "app")`. Live tail with:
+- All notable events go through `AppLogger` (`Util/Logger.swift`), which writes to `os.Logger(subsystem: "com.zsolttanko.squint", category: "app")`. Live tail with:
   ```bash
-  log stream --predicate 'subsystem == "com.inlinellmlens"' --level info
+  log stream --predicate 'subsystem == "com.zsolttanko.squint"' --level info
   ```
   Or for a window of past logs:
   ```bash
-  log show --predicate 'subsystem == "com.inlinellmlens"' --info --last 5m
+  log show --predicate 'subsystem == "com.zsolttanko.squint"' --info --last 5m
   ```
 
 See [`DEVELOPMENT.md`](DEVELOPMENT.md) for more debugging recipes.

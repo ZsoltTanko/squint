@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # Kill, rebuild, re-register with Launch Services, relaunch.
-# The standard development iteration loop for Inline LLM Lens.
+# The standard development iteration loop for Squint.
 # See docs/DEVELOPMENT.md for context.
 
 set -euo pipefail
@@ -8,10 +8,10 @@ set -euo pipefail
 REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 cd "$REPO_ROOT"
 
-PROJECT="InlineLLMLens.xcodeproj"
-SCHEME="InlineLLMLens"
+PROJECT="Squint.xcodeproj"
+SCHEME="Squint"
 BUILD_DIR="build"
-APP_PATH="$BUILD_DIR/Build/Products/Debug/InlineLLMLens.app"
+APP_PATH="$BUILD_DIR/Build/Products/Debug/Squint.app"
 
 # Regenerate the Xcode project if project.yml is newer than the .xcodeproj
 if [[ ! -d "$PROJECT" ]] || [[ "project.yml" -nt "$PROJECT" ]]; then
@@ -23,8 +23,8 @@ if [[ ! -d "$PROJECT" ]] || [[ "project.yml" -nt "$PROJECT" ]]; then
     xcodegen generate
 fi
 
-echo "==> Killing any running InlineLLMLens"
-killall InlineLLMLens 2>/dev/null || true
+echo "==> Killing any running Squint"
+killall Squint 2>/dev/null || true
 
 echo "==> Building"
 set +e
@@ -56,8 +56,8 @@ echo "==> Launching $APP_PATH"
 open "$REPO_ROOT/$APP_PATH"
 
 sleep 1
-if pgrep -x InlineLLMLens >/dev/null; then
-    echo "==> Running (pid $(pgrep -x InlineLLMLens))"
+if pgrep -x Squint >/dev/null; then
+    echo "==> Running (pid $(pgrep -x Squint))"
 else
     echo "==> Warning: app launched but no process found. Check Console.app for crash logs." >&2
 fi
