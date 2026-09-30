@@ -28,7 +28,10 @@ final class MenuBarController: NSObject {
         super.init()
 
         if let button = statusItem.button {
-            let image = NSImage(systemSymbolName: "text.viewfinder", accessibilityDescription: "Squint")
+            // A half-closed eye — a squint. That symbol ships with macOS 26;
+            // earlier systems fall back to the plain eye.
+            let image = NSImage(systemSymbolName: "eye.half.closed", accessibilityDescription: "Squint")
+                ?? NSImage(systemSymbolName: "eye", accessibilityDescription: "Squint")
             image?.isTemplate = true
             button.image = image
             button.toolTip = "Squint"
