@@ -19,13 +19,9 @@ No copy-paste. No chat tab. No losing your place.
 
 </div>
 
-## Stop squinting
+## What it does
 
-You're reading along and hit a wall: a stack trace, a clause of legalese, a paragraph in German, an acronym nobody on the thread bothered to expand.
-
-The usual fix costs you your focus: copy it, switch to a chat tab, paste, type *"explain this"*, wait, read, switch back, find your place again.
-
-Squint removes every step between *"huh?"* and the answer. Select the text and press <kbd>⌥</kbd> <kbd>Space</kbd>. The answer streams into a small panel right where your cursor is. Press <kbd>Esc</kbd> and you're exactly where you were.
+Squint sends the text you select in any app to an LLM and shows the response in a small panel at your cursor. It can explain the selection, answer a question you ask about it, or take a question with nothing selected.
 
 <table>
   <tr>
