@@ -254,6 +254,9 @@ Almost. The hotkey reads the selection through macOS Accessibility and falls bac
 **Which model should I use?**
 For the instant feel, use a fast model. With a reasoning model, set the reasoning effort to *minimal* on the model or preset, or answers will take a few seconds to start. Local models through Ollama or LM Studio work too.
 
+**Can I make answers arrive faster?**
+If your provider offers a priority tier, yes. Set the model's **Service tier** to `priority` in **Settings → Models**. On OpenAI that's Fast mode, and on OpenRouter it works across the providers that offer one. You get lower latency at a higher per-token price. To use it only for some presets, add the model twice (once with the tier, once without) and pick one per preset.
+
 **One of the hotkeys is already taken on my Mac.**
 Change <kbd>⌥</kbd> <kbd>Space</kbd> in **Settings → General**, and any preset's shortcut in **Settings → Prompts**.
 

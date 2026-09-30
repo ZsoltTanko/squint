@@ -76,6 +76,53 @@ final class OpenAICompatibleClientTests: XCTestCase {
         }
     }
 
+    func testServiceTierIsSentWhenSet() async throws {
+        var model = makeModel()
+        model.serviceTier = " priority "
+        let body = try await capturedRequestBody(for: model)
+        XCTAssertEqual(body["service_tier"] as? String, "priority")
+    }
+
+    func testServiceTierIsOmittedWhenBlank() async throws {
+        var model = makeModel()
+        let unsetBody = try await capturedRequestBody(for: model)
+        XCTAssertNil(unsetBody["service_tier"])
+        model.serviceTier = "   "
+        let blankBody = try await capturedRequestBody(for: model)
+        XCTAssertNil(blankBody["service_tier"],
+                     "A blank tier must not be sent: some providers reject unknown values")
+    }
+
+    /// Sends a non-streaming request for `model` and returns the JSON body the
+    /// client put on the wire.
+    private func capturedRequestBody(for model: ModelConfig) async throws -> [String: Any] {
+        var captured: [String: Any] = [:]
+        StubURLProtocol.handler = { request in
+            captured = Self.jsonBody(of: request)
+            let body = #"{"choices":[{"message":{"role":"assistant","content":"ok"}}],"service_tier":"default"}"#
+            let response = HTTPURLResponse(url: request.url!, statusCode: 200, httpVersion: nil, headerFields: nil)!
+            return (response, Data(body.utf8))
+        }
+        let client = OpenAICompatibleClient(session: makeSession(), apiKeyProvider: { _ in "key" })
+        let req = LLMRequest(model: model, messages: [.init(role: .user, content: "hi")], temperature: nil, maxTokens: nil, stream: false)
+        _ = try await client.complete(request: req)
+        return captured
+    }
+
+    /// URLProtocol usually sees the body as a stream rather than `httpBody`.
+    private static func jsonBody(of request: URLRequest) -> [String: Any] {
+        var data = request.httpBody ?? Data()
+        if data.isEmpty, let stream = request.httpBodyStream {
+            stream.open()
+            defer { stream.close() }
+            var buffer = [UInt8](repeating: 0, count: 4096)
+            while case let count = stream.read(&buffer, maxLength: buffer.count), count > 0 {
+                data.append(buffer, count: count)
+            }
+        }
+        return (try? JSONSerialization.jsonObject(with: data)) as? [String: Any] ?? [:]
+    }
+
     func testHTTPErrorSurfacesStatusAndBody() async {
         StubURLProtocol.handler = { _ in
             let response = HTTPURLResponse(url: URL(string: "https://example.test/v1/chat/completions")!, statusCode: 401, httpVersion: nil, headerFields: nil)!

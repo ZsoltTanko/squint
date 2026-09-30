@@ -35,6 +35,9 @@ final class OpenAICompatibleClient: LLMProvider {
             let (data, response) = try await session.data(for: urlRequest)
             try Self.validate(response: response, data: data)
             let decoded = try JSONDecoder().decode(ChatCompletionResponse.self, from: data)
+            if let served = decoded.serviceTier {
+                Self.logServiceTier(served: served, requested: Self.serviceTier(for: request.model))
+            }
             let text = decoded.choices.first?.message?.content ?? ""
             return LLMResponse(
                 text: text,
@@ -69,6 +72,7 @@ final class OpenAICompatibleClient: LLMProvider {
                     }
 
                     var firstDeltaLogged = false
+                    var serviceTierLogged = false
                     for try await line in bytes.lines {
                         if Task.isCancelled { throw LLMError.cancelled }
                         guard line.hasPrefix("data:") else { continue }
@@ -79,8 +83,12 @@ final class OpenAICompatibleClient: LLMProvider {
                             return
                         }
                         guard let data = payload.data(using: .utf8) else { continue }
-                        if let chunk = try? JSONDecoder().decode(ChatCompletionChunk.self, from: data),
-                           let delta = chunk.choices.first?.delta?.content, !delta.isEmpty {
+                        guard let chunk = try? JSONDecoder().decode(ChatCompletionChunk.self, from: data) else { continue }
+                        if !serviceTierLogged, let served = chunk.serviceTier {
+                            Self.logServiceTier(served: served, requested: Self.serviceTier(for: request.model))
+                            serviceTierLogged = true
+                        }
+                        if let delta = chunk.choices.first?.delta?.content, !delta.isEmpty {
                             if !firstDeltaLogged {
                                 let firstAt = Date().timeIntervalSince(started)
                                 AppLogger.shared.info(String(format: "LLM first delta in %.2fs", firstAt))
@@ -123,10 +131,24 @@ final class OpenAICompatibleClient: LLMProvider {
             stream: stream,
             temperature: request.temperature,
             maxTokens: request.maxTokens,
-            reasoningEffort: (trimmedEffort?.isEmpty == false) ? trimmedEffort : nil
+            reasoningEffort: (trimmedEffort?.isEmpty == false) ? trimmedEffort : nil,
+            serviceTier: Self.serviceTier(for: request.model)
         )
         urlRequest.httpBody = try JSONEncoder().encode(body)
         return urlRequest
+    }
+
+    /// The model's `service_tier`, or nil when unset so the field is left
+    /// out of the body and providers apply their standard processing.
+    private static func serviceTier(for model: ModelConfig) -> String? {
+        let tier = model.serviceTier?.trimmingCharacters(in: .whitespacesAndNewlines)
+        return (tier?.isEmpty == false) ? tier : nil
+    }
+
+    /// Providers may serve a different tier than requested (OpenAI downgrades
+    /// Fast mode requests past its ramp limits), so log what was served.
+    private static func logServiceTier(served: String, requested: String?) {
+        AppLogger.shared.info("LLM service tier: served \(served), requested \(requested ?? "none")")
     }
 
     private static func isLocalHost(_ url: URL) -> Bool {
@@ -152,11 +174,13 @@ private struct ChatCompletionBody: Encodable {
     let temperature: Double?
     let maxTokens: Int?
     let reasoningEffort: String?
+    let serviceTier: String?
 
     enum CodingKeys: String, CodingKey {
         case model, messages, stream, temperature
         case maxTokens = "max_tokens"
         case reasoningEffort = "reasoning_effort"
+        case serviceTier = "service_tier"
     }
 }
 
@@ -169,6 +193,8 @@ private struct ChatCompletionResponse: Decodable {
     }
     let model: String?
     let choices: [Choice]
+    let serviceTier: String?
+    enum CodingKeys: String, CodingKey { case model, choices; case serviceTier = "service_tier" }
 }
 
 private struct ChatCompletionChunk: Decodable {
@@ -179,4 +205,6 @@ private struct ChatCompletionChunk: Decodable {
         enum CodingKeys: String, CodingKey { case delta; case finishReason = "finish_reason" }
     }
     let choices: [Choice]
+    let serviceTier: String?
+    enum CodingKeys: String, CodingKey { case choices; case serviceTier = "service_tier" }
 }

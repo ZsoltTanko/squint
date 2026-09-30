@@ -120,6 +120,7 @@ private struct ModelEditor: View {
     @State private var apiKey: String = ""
     @State private var baseURLString: String
     @State private var reasoningEffort: String
+    @State private var serviceTier: String
 
     init(initial: ModelConfig, isNew: Bool, onSave: @escaping (ModelConfig, String?) -> Void, onCancel: @escaping () -> Void) {
         self.initial = initial
@@ -129,6 +130,7 @@ private struct ModelEditor: View {
         self._draft = State(initialValue: initial)
         self._baseURLString = State(initialValue: initial.baseURL.absoluteString)
         self._reasoningEffort = State(initialValue: initial.reasoningEffort ?? "")
+        self._serviceTier = State(initialValue: initial.serviceTier ?? "")
     }
 
     var body: some View {
@@ -162,6 +164,12 @@ private struct ModelEditor: View {
                         .font(.caption)
                         .foregroundStyle(.secondary)
                 }
+                Section("Service tier") {
+                    TextField("service_tier", text: $serviceTier, prompt: Text("e.g. priority, flex"))
+                    Text("Sent as the `service_tier` field in the chat completions body. `priority` (OpenAI's Fast mode) gets faster responses at a higher price on OpenAI, OpenRouter and other providers that support it. Leave blank for standard processing.")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                }
             }
             .formStyle(.grouped)
 
@@ -176,6 +184,8 @@ private struct ModelEditor: View {
                     }
                     let trimmedEffort = reasoningEffort.trimmingCharacters(in: .whitespacesAndNewlines)
                     out.reasoningEffort = trimmedEffort.isEmpty ? nil : trimmedEffort
+                    let trimmedTier = serviceTier.trimmingCharacters(in: .whitespacesAndNewlines)
+                    out.serviceTier = trimmedTier.isEmpty ? nil : trimmedTier
                     onSave(out, apiKey.isEmpty ? nil : apiKey)
                 }
                 .keyboardShortcut(.defaultAction)

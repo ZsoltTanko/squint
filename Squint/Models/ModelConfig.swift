@@ -14,6 +14,11 @@ struct ModelConfig: Codable, Identifiable, Equatable, Hashable {
     /// when non-empty. OpenAI currently accepts "minimal", "low", "medium", "high".
     /// Leave empty / nil for non-reasoning models.
     var reasoningEffort: String?
+    /// Free-form value sent as `service_tier` in the chat completions body
+    /// when non-empty. `priority` (OpenAI's Fast mode) buys lower latency at
+    /// a higher price on OpenAI, OpenRouter and other providers that
+    /// implement the field; values vary by provider, so it stays opaque text.
+    var serviceTier: String?
 
     init(
         id: UUID = UUID(),
@@ -25,7 +30,8 @@ struct ModelConfig: Codable, Identifiable, Equatable, Hashable {
         supportsVision: Bool = false,
         supportsStreaming: Bool = true,
         maxInputTokens: Int? = nil,
-        reasoningEffort: String? = nil
+        reasoningEffort: String? = nil,
+        serviceTier: String? = nil
     ) {
         self.id = id
         self.displayName = displayName
@@ -37,5 +43,6 @@ struct ModelConfig: Codable, Identifiable, Equatable, Hashable {
         self.supportsStreaming = supportsStreaming
         self.maxInputTokens = maxInputTokens
         self.reasoningEffort = reasoningEffort
+        self.serviceTier = serviceTier
     }
 }
