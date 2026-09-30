@@ -1,17 +1,17 @@
 # Recording the README demos
 
-The README shows five demo clips and one screenshot. This page covers how to record them so they look consistent, and how to turn the recordings into GIFs. Re-record a clip whenever the panel UI changes enough that the old one misleads.
+The README shows six demo GIFs. This page covers how to record them so they look consistent, and how to turn the recordings into GIFs. Re-record a clip whenever the panel UI changes enough that the old one misleads.
 
 | File | Shows | Trigger | Length |
 | --- | --- | --- | --- |
 | `hero.gif` | Explain: a regex in a code editor | <kbd>⌥</kbd> <kbd>Space</kbd> | 8–12 s |
-| `ask-error.gif` | Ask: a traceback in Terminal, plus a typed question | <kbd>⌥</kbd> <kbd>⇧</kbd> <kbd>Space</kbd> | 10–15 s |
-| `translate.gif` | Explain: a German paragraph in a browser | <kbd>⌥</kbd> <kbd>Space</kbd> | 8–12 s |
-| `jargon.gif` | Explain: one contract clause | <kbd>⌥</kbd> <kbd>Space</kbd> | 8–12 s |
-| `prompt.gif` | Prompt: no selection, a typed question | <kbd>⌃</kbd> <kbd>⌥</kbd> <kbd>Space</kbd> | 8–12 s |
-| `presets.png` | The preset editor with a custom preset | — | still |
+| `ask.gif` | Ask: a term of art in an essay, plus a typed question | <kbd>⌥</kbd> <kbd>⇧</kbd> <kbd>Space</kbd> | 8–12 s |
+| `translate.gif` | Ask: a German paragraph, plus "translate to english" | <kbd>⌥</kbd> <kbd>⇧</kbd> <kbd>Space</kbd> | 8–12 s |
+| `jargon.gif` | Explain: one contract clause | <kbd>⌥</kbd> <kbd>Space</kbd> | 5–10 s |
+| `prompt.gif` | Prompt: no selection, a question, then a <kbd>⌘</kbd> <kbd>L</kbd> follow-up | <kbd>⌃</kbd> <kbd>⌥</kbd> <kbd>Space</kbd> | 12–15 s |
+| `presets.gif` | Creating a preset with its own hotkey, then using it | the new hotkey | 15–20 s |
 
-The content for each clip is in [`demo/`](demo). Copy that folder somewhere with a short path first, so file paths shown on screen stay tidy:
+Content for the hero, translate and jargon clips is in [`demo/`](demo). Copy that folder somewhere with a short path first, so file paths shown on screen stay tidy:
 
 ```bash
 cp -R docs/media/demo ~/squint-demo
@@ -41,19 +41,13 @@ cp -R docs/media/demo ~/squint-demo
 
 Open `~/squint-demo/signup.ts` in VS Code (or any editor with syntax highlighting) with the sidebar hidden. Triple-click the regex line to select it and press <kbd>⌥</kbd> <kbd>Space</kbd>.
 
-### `ask-error.gif`
+### `ask.gif`
 
-In Terminal, run the script. It needs Python 3.11 or later for the `~~~^^^` highlighting:
-
-```bash
-cd ~/squint-demo && clear && python3 sync.py
-```
-
-Select from `warning:` through the `TypeError` line and press <kbd>⌥</kbd> <kbd>⇧</kbd> <kbd>Space</kbd>. Type `what's the fix?` and press <kbd>⌘</kbd> <kbd>↵</kbd>.
+Open any essay or article with a term of art in it (the current take uses "Dutch book" in a decision-theory essay). Double-click the term, press <kbd>⌥</kbd> <kbd>⇧</kbd> <kbd>Space</kbd>, type `what is this?` and press <kbd>⌘</kbd> <kbd>↵</kbd>.
 
 ### `translate.gif`
 
-Open `~/squint-demo/mietkaution.html` in Safari. Triple-click the second paragraph ("Die Mietkaution darf höchstens…") and press <kbd>⌥</kbd> <kbd>Space</kbd>. The built-in Explain preset translates into English before explaining.
+Open `~/squint-demo/mietkaution.html` in Safari. Triple-click a paragraph, press <kbd>⌥</kbd> <kbd>⇧</kbd> <kbd>Space</kbd>, type `translate to english` and press <kbd>⌘</kbd> <kbd>↵</kbd>.
 
 ### `jargon.gif`
 
@@ -61,24 +55,21 @@ Open `~/squint-demo/agreement.html` in Safari. Triple-click clause 8.1 ("Notwith
 
 ### `prompt.gif`
 
-Start with nothing selected, for example by clicking an empty part of a Safari window. Press <kbd>⌃</kbd> <kbd>⌥</kbd> <kbd>Space</kbd>, type the question below, and press <kbd>⌘</kbd> <kbd>↵</kbd>. The answer should include a code block.
+Start with nothing selected, for example by clicking an empty part of a Safari window. Press <kbd>⌃</kbd> <kbd>⌥</kbd> <kbd>Space</kbd>, type a question, and press <kbd>⌘</kbd> <kbd>↵</kbd>. When the answer is in, press <kbd>⌘</kbd> <kbd>L</kbd>, type a follow-up, and press <kbd>↵</kbd>.
 
-```text
-ffmpeg command to cut the first 10 seconds off input.mp4 without re-encoding
-```
+### `presets.gif`
 
-### `presets.png`
-
-Create an example preset, *Translate to Spanish*, using the prompt from the README's preset ideas. Give it a global hotkey such as <kbd>⌃</kbd> <kbd>⌥</kbd> <kbd>T</kbd>. Open it in **Settings → Prompts → Edit**, press <kbd>⌘</kbd> <kbd>⇧</kbd> <kbd>4</kbd>, then <kbd>Space</kbd>, and click the Settings window to capture it with its shadow.
+Start the recording with **Settings → Prompts** open. Click **Add Preset**, name it (e.g. `spanish`), type a short system prompt (`translate to spanish`), record a global hotkey, and click **Add**. Close Settings, double-click a word in an article, and press the new hotkey.
 
 ## Converting to GIF
 
-Trim to the interesting part, scale down, and build a per-clip palette. Use a width of 960 for the hero and 640 for the grid clips. Aim for under about 5 MB for the hero and 2 MB for each grid clip, so GitHub loads them quickly.
+Name the recordings after the GIFs (`hero.mov`, `ask.mov`, …) and run [`make_gifs.py`](make_gifs.py) with the folder they're in:
 
 ```bash
-ffmpeg -ss 0.5 -to 11 -i take.mov \
-  -vf "fps=15,scale=960:-1:flags=lanczos,split[a][b];[a]palettegen=stats_mode=diff[p];[b][p]paletteuse=dither=bayer:bayer_scale=5:diff_mode=rectangle" \
-  -loop 0 docs/media/hero.gif
+python3 docs/media/make_gifs.py ~/Downloads            # all clips
+python3 docs/media/make_gifs.py ~/Downloads prompt     # just one
 ```
 
-If a clip is still too big, lower `fps` to 12, cut the dead time while the model is thinking, or tighten the crop with `crop=w:h:x:y` before `scale`.
+For each clip, the script crops, sets the width (960 for the hero, 640 for the grid clips, 800 for the preset demo), and builds a per-clip palette. It also freezes the finished answer for 1.5 seconds before the panel closes, so viewers can read it before the GIF loops. The four grid clips are cropped to the same shape so the README's 2×2 table lines up.
+
+The hold points, crops and speed-ups are specific to each take. After re-recording, find when the panel closes (scrub the `.mov` in QuickTime) and update that clip's entry in `CLIPS`. Keep the hero under about 5 MB and each grid clip under about 2 MB so GitHub loads them quickly.

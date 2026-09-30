@@ -30,12 +30,12 @@ Squint removes every step between *"huh?"* and the answer. Select the text and p
 <table>
   <tr>
     <td width="50%" valign="top">
-      <img src="docs/media/ask-error.gif" alt="Selecting a Python traceback in Terminal, asking what the fix is, and reading Squint's answer">
-      <p><b>Debug without leaving the terminal.</b><br>Select an error, press <kbd>⌥</kbd> <kbd>⇧</kbd> <kbd>Space</kbd>, ask what went wrong, and get the likely cause and the fix.</p>
+      <img src="docs/media/ask.gif" alt="Selecting the term 'Dutch book' in an essay, pressing Option-Shift-Space, asking 'what is this?', and reading Squint's answer">
+      <p><b>Ask your own question.</b><br>Select a term, press <kbd>⌥</kbd> <kbd>⇧</kbd> <kbd>Space</kbd>, and ask whatever you want to know about it.</p>
     </td>
     <td width="50%" valign="top">
-      <img src="docs/media/translate.gif" alt="Selecting a German paragraph in a browser and reading Squint's English translation and explanation">
-      <p><b>Read any language.</b><br>Select a paragraph in any language and get it back in plain English, explained.</p>
+      <img src="docs/media/translate.gif" alt="Selecting a German paragraph in a browser, asking Squint to translate it, and reading the English translation">
+      <p><b>Read any language.</b><br>Select a paragraph in any language and get it back in plain English.</p>
     </td>
   </tr>
   <tr>
@@ -44,8 +44,8 @@ Squint removes every step between *"huh?"* and the answer. Select the text and p
       <p><b>Cut through jargon.</b><br>Contracts, papers, specs, filings: the one sentence you're stuck on, in plain words.</p>
     </td>
     <td width="50%" valign="top">
-      <img src="docs/media/prompt.gif" alt="Pressing a hotkey with nothing selected, typing a question, and reading Squint's answer">
-      <p><b>Or just ask.</b><br>No selection needed. Press <kbd>⌃</kbd> <kbd>⌥</kbd> <kbd>Space</kbd>, type a question, get an answer, faster than opening a chat app.</p>
+      <img src="docs/media/prompt.gif" alt="Pressing a hotkey with nothing selected, typing a question, reading Squint's answer, then asking a follow-up">
+      <p><b>Or just ask.</b><br>No selection needed. Press <kbd>⌃</kbd> <kbd>⌥</kbd> <kbd>Space</kbd>, type a question, and keep going with <kbd>⌘</kbd> <kbd>L</kbd> follow-ups.</p>
     </td>
   </tr>
 </table>
@@ -77,7 +77,9 @@ The real power is in making your own.
 - **Looks like it belongs on your Mac.** The panel is borderless with no title bar, and it opens right at your cursor. It's dark by default, with translucent, light and custom-color themes, and it remembers its size for each preset.
 
 <p align="center">
-  <img src="docs/media/presets.png" width="720" alt="Squint's preset editor, showing a custom preset with its own system prompt, model and global hotkey">
+  <img src="docs/media/presets.gif" width="720" alt="Creating a 'spanish' preset in Squint's Settings with its own system prompt and global hotkey, then selecting a word in an article and translating it with that hotkey">
+  <br>
+  <em>A new preset, from Settings to answer in about fifteen seconds.</em>
 </p>
 
 ## Private by design
