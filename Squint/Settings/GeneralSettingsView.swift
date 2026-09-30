@@ -10,8 +10,8 @@ struct GeneralSettingsView: View {
     @AppStorage(SettingsStore.Keys.launchAtLogin) private var launchAtLogin: Bool = false
     @AppStorage(SettingsStore.Keys.panelFontSize) private var panelFontSize: Double = SettingsStore.defaultPanelFontSize
     @AppStorage(SettingsStore.Keys.panelClickOffBehavior) private var clickOffBehaviorRaw: String = SettingsStore.PanelClickOffBehavior.stayOnTop.rawValue
-    @AppStorage(SettingsStore.Keys.panelPlacement) private var panelPlacementRaw: String = SettingsStore.PanelPlacement.nearMouse.rawValue
-    @AppStorage(SettingsStore.Keys.panelAppearanceMode) private var panelAppearanceModeRaw: String = SettingsStore.PanelAppearanceMode.system.rawValue
+    @AppStorage(SettingsStore.Keys.panelPlacement) private var panelPlacementRaw: String = SettingsStore.PanelPlacement.centeredOnCursor.rawValue
+    @AppStorage(SettingsStore.Keys.panelAppearanceMode) private var panelAppearanceModeRaw: String = SettingsStore.PanelAppearanceMode.dark.rawValue
     @AppStorage(SettingsStore.Keys.panelCustomBackgroundHex) private var panelCustomBackgroundHex: String = SettingsStore.defaultPanelCustomBackgroundHex
     @AppStorage(SettingsStore.Keys.panelCustomTextHex) private var panelCustomTextHex: String = SettingsStore.defaultPanelCustomTextHex
 
@@ -48,7 +48,7 @@ struct GeneralSettingsView: View {
 
                 Picker("Panel theme", selection: Binding(
                     get: {
-                        SettingsStore.PanelAppearanceMode(rawValue: panelAppearanceModeRaw) ?? .system
+                        SettingsStore.PanelAppearanceMode(rawValue: panelAppearanceModeRaw) ?? .dark
                     },
                     set: { newValue in
                         panelAppearanceModeRaw = newValue.rawValue
@@ -59,7 +59,7 @@ struct GeneralSettingsView: View {
                     }
                 }
 
-                if (SettingsStore.PanelAppearanceMode(rawValue: panelAppearanceModeRaw) ?? .system) == .custom {
+                if (SettingsStore.PanelAppearanceMode(rawValue: panelAppearanceModeRaw) ?? .dark) == .custom {
                     customColorsEditor
                 }
             }
@@ -67,7 +67,7 @@ struct GeneralSettingsView: View {
             Section("Window behaviour") {
                 Picker("Panel placement on invocation", selection: Binding(
                     get: {
-                        SettingsStore.PanelPlacement(rawValue: panelPlacementRaw) ?? .nearMouse
+                        SettingsStore.PanelPlacement(rawValue: panelPlacementRaw) ?? .centeredOnCursor
                     },
                     set: { newValue in
                         panelPlacementRaw = newValue.rawValue

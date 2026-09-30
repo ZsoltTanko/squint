@@ -65,9 +65,9 @@ final class SettingsStore: ObservableObject {
 
     /// Where the floating panel appears on invocation.
     enum PanelPlacement: String, CaseIterable, Identifiable {
-        /// Anchored just below+right of the mouse cursor (current default).
+        /// Anchored just below+right of the mouse cursor.
         case nearMouse
-        /// Centered on the mouse cursor.
+        /// Centered on the mouse cursor (default).
         case centeredOnCursor
         /// Centered on the active screen.
         case centeredOnScreen
@@ -76,8 +76,8 @@ final class SettingsStore: ObservableObject {
 
         var label: String {
             switch self {
-            case .nearMouse:         return "Near cursor (default)"
-            case .centeredOnCursor:  return "Centered on cursor"
+            case .nearMouse:         return "Near cursor"
+            case .centeredOnCursor:  return "Centered on cursor (default)"
             case .centeredOnScreen:  return "Centered on screen"
             }
         }
@@ -107,7 +107,7 @@ final class SettingsStore: ObservableObject {
     /// Default body font size for the response area. Tuned for power-user
     /// glanceability — small enough to fit a paragraph at a glance, large
     /// enough to stay readable. User-overridable in Settings → General.
-    static let defaultPanelFontSize: Double = 13
+    static let defaultPanelFontSize: Double = 14
     static let panelFontSizeRange: ClosedRange<Double> = 11...18
 
     private let defaults: UserDefaults
@@ -125,8 +125,8 @@ final class SettingsStore: ObservableObject {
             Keys.showMenuBarIcon: true,
             Keys.panelFontSize: SettingsStore.defaultPanelFontSize,
             Keys.panelClickOffBehavior: PanelClickOffBehavior.stayOnTop.rawValue,
-            Keys.panelPlacement: PanelPlacement.nearMouse.rawValue,
-            Keys.panelAppearanceMode: PanelAppearanceMode.system.rawValue,
+            Keys.panelPlacement: PanelPlacement.centeredOnCursor.rawValue,
+            Keys.panelAppearanceMode: PanelAppearanceMode.dark.rawValue,
             Keys.panelCustomBackgroundHex: SettingsStore.defaultPanelCustomBackgroundHex,
             Keys.panelCustomTextHex: SettingsStore.defaultPanelCustomTextHex,
             Keys.queryHistoryLimit: SettingsStore.defaultQueryHistoryLimit
@@ -190,7 +190,7 @@ final class SettingsStore: ObservableObject {
     var panelPlacement: PanelPlacement {
         get {
             let raw = defaults.string(forKey: Keys.panelPlacement) ?? ""
-            return PanelPlacement(rawValue: raw) ?? .nearMouse
+            return PanelPlacement(rawValue: raw) ?? .centeredOnCursor
         }
         set {
             defaults.set(newValue.rawValue, forKey: Keys.panelPlacement)
@@ -201,7 +201,7 @@ final class SettingsStore: ObservableObject {
     var panelAppearanceMode: PanelAppearanceMode {
         get {
             let raw = defaults.string(forKey: Keys.panelAppearanceMode) ?? ""
-            return PanelAppearanceMode(rawValue: raw) ?? .system
+            return PanelAppearanceMode(rawValue: raw) ?? .dark
         }
         set {
             defaults.set(newValue.rawValue, forKey: Keys.panelAppearanceMode)

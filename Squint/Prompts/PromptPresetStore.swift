@@ -18,7 +18,15 @@ final class PromptPresetStore: ObservableObject {
     /// because `UserDefaults` only round-trips plist-friendly types.
     private let installedSeedsKey = "Squint.installedFactorySeedNames"
 
-    init(fileURL: URL? = nil, defaults: UserDefaults = .standard, seedIfEmpty: Bool = true) {
+    /// `onSeedInstalled` runs for each factory seed as it's added to the
+    /// catalog, letting the app attach install-time extras such as the
+    /// seed's shipped hotkey.
+    init(
+        fileURL: URL? = nil,
+        defaults: UserDefaults = .standard,
+        seedIfEmpty: Bool = true,
+        onSeedInstalled: (PromptPreset) -> Void = { _ in }
+    ) {
         self.defaults = defaults
         if let fileURL {
             self.fileURL = fileURL
@@ -47,8 +55,9 @@ final class PromptPresetStore: ObservableObject {
             }
             markFactorySeedsInstalled(seeds.map { $0.name })
             save()
+            seeds.forEach(onSeedInstalled)
         } else if seedIfEmpty {
-            installNewFactorySeedsIfNeeded()
+            installNewFactorySeedsIfNeeded(onSeedInstalled: onSeedInstalled)
         }
         if defaultPresetID == nil {
             defaultPresetID = presets.first?.id
@@ -69,7 +78,7 @@ final class PromptPresetStore: ObservableObject {
     ///   name" guard prevents that, and we then record all current seed
     ///   names as offered so the guard isn't load-bearing on subsequent
     ///   launches.
-    private func installNewFactorySeedsIfNeeded() {
+    private func installNewFactorySeedsIfNeeded(onSeedInstalled: (PromptPreset) -> Void) {
         let alreadyOffered = installedFactorySeedNames()
         let existingNames = Set(presets.map { $0.name })
         let candidates = PromptPreset.factorySeeds.filter {
@@ -81,6 +90,7 @@ final class PromptPresetStore: ObservableObject {
             var copy = seed
             copy.sortOrder = nextSortOrder + offset
             presets.append(copy)
+            onSeedInstalled(copy)
             AppLogger.shared.info("Installed new factory preset seed: \(seed.name)")
         }
         // Record every current factory-seed name as offered, including ones

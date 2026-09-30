@@ -188,7 +188,9 @@ extension PromptPreset {
                 requiresSelection: false,
                 autoSend: true,
                 pinnedInDropdown: true,
-                sortOrder: 0
+                sortOrder: 0,
+                panelWidth: 524,
+                panelHeight: 436
             ),
             PromptPreset(
                 name: "Ask",
@@ -197,7 +199,9 @@ extension PromptPreset {
                 requiresSelection: false,
                 autoSend: true,
                 pinnedInDropdown: true,
-                sortOrder: 1
+                sortOrder: 1,
+                panelWidth: 520,
+                panelHeight: 550
             ),
             PromptPreset(
                 name: "Prompt",
@@ -208,7 +212,9 @@ extension PromptPreset {
                 autoSend: true,
                 capturesSelection: false,
                 pinnedInDropdown: true,
-                sortOrder: 2
+                sortOrder: 2,
+                panelWidth: 666,
+                panelHeight: 554
             )
         ]
     }

@@ -8,7 +8,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     static var shared: AppDelegate!
 
     let modelStore = ModelStore()
-    let presetStore = PromptPresetStore()
+    let presetStore = PromptPresetStore(onSeedInstalled: PromptPreset.bindFactoryHotkey(for:))
     let settings = SettingsStore.shared
     let registry: ProviderRegistry
     let captureService: SelectionCaptureService

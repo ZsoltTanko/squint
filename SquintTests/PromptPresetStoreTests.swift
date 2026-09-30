@@ -88,6 +88,27 @@ final class PromptPresetStoreTests: XCTestCase {
                        "A factory seed the user deleted must not be re-installed on next launch")
     }
 
+    func testSeedInstallCallbackRunsOncePerInstalledSeed() {
+        let url = FileManager.default.temporaryDirectory.appendingPathComponent("prompts-\(UUID()).json")
+        let defaults = UserDefaults(suiteName: "PromptPresetStoreSeedHook-\(UUID().uuidString)")!
+
+        var installed: [PromptPreset] = []
+        let store = PromptPresetStore(fileURL: url, defaults: defaults, onSeedInstalled: { installed.append($0) })
+        XCTAssertEqual(installed.map(\.name), PromptPreset.factorySeeds.map(\.name))
+        XCTAssertEqual(installed.map(\.id), store.presets.map(\.id),
+                       "The callback must receive the installed presets, whose IDs key their hotkeys")
+
+        installed.removeAll()
+        _ = PromptPresetStore(fileURL: url, defaults: defaults, onSeedInstalled: { installed.append($0) })
+        XCTAssertTrue(installed.isEmpty, "Reopening an existing catalog must not re-run install-time setup")
+    }
+
+    func testFactorySeedHotkeysNameExistingSeeds() {
+        let seedNames = Set(PromptPreset.factorySeeds.map(\.name))
+        XCTAssertTrue(Set(PromptPreset.factorySeedHotkeys.keys).isSubset(of: seedNames),
+                      "A renamed factory seed would silently lose its shipped hotkey")
+    }
+
     func testReorderUpdatesSortOrder() {
         let store = makeStore()
         let a = PromptPreset(name: "A", systemPrompt: "x", sortOrder: 1)

@@ -97,8 +97,9 @@ struct ModelsSettingsView: View {
         ModelConfig(
             displayName: "New Model",
             provider: .openAICompatible,
-            modelName: "gpt-4o-mini",
-            baseURL: URL(string: "https://api.openai.com/v1")!
+            modelName: "gpt-6-luna",
+            baseURL: URL(string: "https://api.openai.com/v1")!,
+            reasoningEffort: "none"
         )
     }
 }
