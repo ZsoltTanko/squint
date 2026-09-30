@@ -1,154 +1,277 @@
+<div align="center">
+
 # Squint
 
-A native macOS menu-bar utility that turns selected text anywhere on screen into a lightweight, configurable, inline LLM interaction without opening a browser or full chat app.
+### Select any text. Press <kbd>⌥</kbd> <kbd>Space</kbd>. Get it.
 
-## What it does
+Squint is a tiny, native Mac menu-bar app that puts the LLM of your choice — cloud or local — one keystroke away from any text on your screen.<br>
+No copy-paste. No chat tab. No losing your place.
 
-Select text in any app → trigger via global hotkey *or* right-click Services menu → see a small floating panel near your context with the LLM's answer streaming in. Read it, hit Esc to dismiss — that's the whole loop.
+![macOS 14+](https://img.shields.io/badge/macOS-14%2B-000000?logo=apple&logoColor=white)
+![Swift](https://img.shields.io/badge/Swift-native-F05138?logo=swift&logoColor=white)
+![Any OpenAI-compatible model](https://img.shields.io/badge/models-bring%20your%20own-6E56CF)
+![No telemetry](https://img.shields.io/badge/telemetry-none-2EA44F)
+[![License: MIT](https://img.shields.io/badge/license-MIT-blue)](LICENSE)
 
-The panel is a chromeless, borderless surface: no title bar, no traffic-light buttons. The response is the primary element; configuration (preset chip, model chip, gear) sits in a slim strip at the top and stays out of the way. The follow-up bar is hidden by default and revealed only on demand.
+<br>
 
-The product is positioned as **an inline semantic lens**, closer to Spotlight / PopClip / Apple Dictionary lookup than to a full chat app. Optimized for low interaction friction, frequent invocation, and minimal visual disruption — specifically for power users who want a precisely configured LLM inline in fast workflows.
+<img src="docs/media/hero.gif" width="860" alt="Selecting a regular expression in a code editor, pressing Option-Space, and reading Squint's explanation as it streams into a small panel at the cursor">
 
-## Quick start (users)
+</div>
 
-1. Install [XcodeGen](https://github.com/yonaskolb/XcodeGen) once: `brew install xcodegen`.
-2. Generate the Xcode project: `xcodegen generate`.
-3. `open Squint.xcodeproj`, hit Cmd+R.
-4. The app appears in the menu bar (no Dock icon — it's an `LSUIElement` agent).
-5. Click the menu-bar icon → **Settings…** → **Models** → **+ Add Model** to configure your provider (OpenAI, OpenRouter, Ollama, LM Studio, etc.). API keys are stored in the macOS Keychain.
-6. Click **Settings… → Permissions** to grant Accessibility access (only required for the global-hotkey path).
-7. Select text in any app and either:
-   - Press **Option+Space** (configurable in Settings → General), or
-   - Right-click → **Services → Ask Squint**.
+## Stop squinting
 
-Three prompt presets ship seeded on first launch, covering the app's three input modalities:
+You're reading along and hit a wall: a stack trace, a clause of legalese, a paragraph in German, an acronym nobody on the thread bothered to expand.
 
-- **Explain** — auto-sends with the captured selection. Pure "lens over selected text" mode.
-- **Ask** — captures the selection *and* requires a user instruction (appended via `{{userInput}}` to the system prompt). Selection plus question.
-- **Prompt** — skips selection capture entirely and is a direct chat-style wrapper: type a question, hit ⌘↵, get an answer. The user-input field becomes the LLM's user message.
+The usual fix costs you your focus: copy it, switch to a chat tab, paste, type *"explain this"*, wait, read, switch back, find your place again.
 
-All three are editable in **Settings → Prompts**. The mode is controlled by two per-preset toggles in the editor — *Capture selected text on invocation* and *Requires user input* — so any combination is reachable, not just the seeded three. New factory seeds shipped in a future release are added on next launch *only when no preset with the same name already exists* and *only the first time the seed is offered* (so a seed you delete stays gone). The user-input field grows vertically with content (up to ~30 lines, then the panel scrolls) so multi-paragraph prompts work cleanly.
+Squint removes every step between *"huh?"* and the answer. Select the text and press <kbd>⌥</kbd> <kbd>Space</kbd>. The answer streams into a small panel right where your cursor is. Press <kbd>Esc</kbd> and you're exactly where you were.
 
-**Panel keyboard shortcuts:**
+<table>
+  <tr>
+    <td width="50%" valign="top">
+      <img src="docs/media/ask-error.gif" alt="Selecting a Python traceback in Terminal, asking what the fix is, and reading Squint's answer">
+      <p><b>Debug without leaving the terminal.</b><br>Select an error, press <kbd>⌥</kbd> <kbd>⇧</kbd> <kbd>Space</kbd>, ask what went wrong, and get the likely cause and the fix.</p>
+    </td>
+    <td width="50%" valign="top">
+      <img src="docs/media/translate.gif" alt="Selecting a German paragraph in a browser and reading Squint's English translation and explanation">
+      <p><b>Read any language.</b><br>Select a paragraph in any language and get it back in plain English, explained.</p>
+    </td>
+  </tr>
+  <tr>
+    <td width="50%" valign="top">
+      <img src="docs/media/jargon.gif" alt="Selecting a dense contract clause and reading Squint's plain-English explanation">
+      <p><b>Cut through jargon.</b><br>Contracts, papers, specs, filings: the one sentence you're stuck on, in plain words.</p>
+    </td>
+    <td width="50%" valign="top">
+      <img src="docs/media/prompt.gif" alt="Pressing a hotkey with nothing selected, typing a question, and reading Squint's answer">
+      <p><b>Or just ask.</b><br>No selection needed. Press <kbd>⌃</kbd> <kbd>⌥</kbd> <kbd>Space</kbd>, type a question, get an answer, faster than opening a chat app.</p>
+    </td>
+  </tr>
+</table>
+
+## How it works
+
+1. **Select** text in almost any app: browser, editor, terminal, PDF, Mail, Slack.
+2. **Press** <kbd>⌥</kbd> <kbd>Space</kbd>, or right-click → **Services → Ask Squint**.
+3. **Read** the answer as it streams in right at your cursor. <kbd>⌘</kbd> <kbd>C</kbd> copies it, <kbd>⌘</kbd> <kbd>L</kbd> asks a follow-up, and <kbd>Esc</kbd> sends you back to what you were doing.
+
+## Built for people who tune their prompts
+
+Squint works out of the box with three presets, each on its own hotkey:
+
+| Preset | Hotkey | What it does |
+| --- | --- | --- |
+| **Explain** | <kbd>⌥</kbd> <kbd>Space</kbd> | Explains the selection the moment you press the key |
+| **Ask** | <kbd>⌥</kbd> <kbd>⇧</kbd> <kbd>Space</kbd> | Takes the selection plus your own question about it |
+| **Prompt** | <kbd>⌃</kbd> <kbd>⌥</kbd> <kbd>Space</kbd> | Skips the selection for a quick, Spotlight-style question |
+
+The real power is in making your own.
+
+- **A hotkey for every prompt.** A preset bundles a system prompt, model, temperature, reasoning effort and panel size, and it can have its own global shortcut. Add <kbd>⌃</kbd> <kbd>⌥</kbd> <kbd>T</kbd> to translate into Spanish, another key to review code, and so on.
+- **Mix and match modes.** Two toggles per preset decide whether it reads the selection and whether it waits for your input, so any preset can work like Explain, Ask or Prompt.
+- **Any model you want.** Squint works with any OpenAI-compatible API: OpenAI, OpenRouter (Claude, Gemini, Llama and many more), Ollama, LM Studio. Switch models right from the panel, or stay fully offline with a local model.
+- **Context-aware prompts.** Presets can use `{{app}}`, `{{windowTitle}}` and `{{date}}`, so one prompt can behave differently in Xcode than in Mail.
+- **Follow-ups on demand.** <kbd>⌘</kbd> <kbd>L</kbd> turns an answer into a conversation. The follow-up bar stays hidden until you want it.
+- **Instant recall.** Recent answers for each preset are one click away. They reopen exactly as you left them, without calling the model again.
+- **Looks like it belongs on your Mac.** The panel is borderless with no title bar, and it opens right at your cursor. It's dark by default, with translucent, light and custom-color themes, and it remembers its size for each preset.
+
+<p align="center">
+  <img src="docs/media/presets.png" width="720" alt="Squint's preset editor, showing a custom preset with its own system prompt, model and global hotkey">
+</p>
+
+## Private by design
+
+- **No account, no server, no telemetry.** Squint has no backend. Requests go straight from your Mac to the provider you configured, or nowhere at all if you use a local model.
+- **Reads only when you ask.** Squint doesn't watch your screen or your clipboard. It reads the selection only when you press the hotkey or use the Services menu.
+- **Keys stay in the Keychain.** API keys are stored in your macOS login Keychain, never in plain files.
+- **History stays on your Mac.** Squint keeps the last 10 queries per preset locally for quick recall; set the limit to 0 to turn this off. A full history log is opt-in.
+- **Clipboard fallback, restored.** Some apps (many browsers, terminals and Electron apps) don't expose the selection to macOS Accessibility. In those, Squint briefly simulates <kbd>⌘</kbd> <kbd>C</kbd> to read it, then puts your clipboard back. You can turn this off in **Settings → Capture**.
+
+## Get started
+
+Squint currently installs from source. You'll need macOS 14 or later, Xcode 15 or later, and [XcodeGen](https://github.com/yonaskolb/XcodeGen).
+
+```bash
+brew install xcodegen
+git clone https://github.com/ZsoltTanko/squint.git
+cd squint
+./bin/dev-restart.sh
+```
+
+That builds Squint and launches it. It lives in your menu bar (look for the half-closed eye), and it has no Dock icon.
+
+Open **Settings…** from the menu-bar icon, then:
+
+1. **Models → + Add Model.** Point it at your provider: OpenAI, OpenRouter, Ollama, LM Studio or any other OpenAI-compatible endpoint. API keys go straight into the Keychain.
+2. **Permissions.** Grant Accessibility access so the hotkey can read your selection. The right-click Services action works without it.
+3. **General → Launch at login**, if you want Squint always within reach.
+
+Now select some text anywhere and press <kbd>⌥</kbd> <kbd>Space</kbd>.
+
+## Preset ideas
+
+Here are a few presets worth stealing. Create one in **Settings → Prompts**, paste in the system prompt, and give it a hotkey. The selected text is sent as the message, so the prompt only needs to say what to do with it.
+
+<details>
+<summary><b>Translate into another language</b></summary>
+
+```text
+Translate the text into natural, idiomatic Spanish. Keep formatting, code and names unchanged. Output only the translation.
+```
+
+</details>
+
+<details>
+<summary><b>Explain code in context</b></summary>
+
+```text
+You are a senior engineer. The user selected this code in {{app}} ({{windowTitle}}). Explain what it does step by step, then point out anything surprising, risky or worth refactoring. Be concise.
+```
+
+</details>
+
+<details>
+<summary><b>Rewrite it clearer</b></summary>
+
+```text
+Rewrite the text to be clearer and more concise while keeping its meaning and tone. Output only the rewritten text, ready to paste.
+```
+
+Press <kbd>⌘</kbd> <kbd>C</kbd> in the panel to copy the result.
+
+</details>
+
+<details>
+<summary><b>Draft a reply</b> (turn on <i>Requires user input</i>)</summary>
+
+```text
+The user selected a message they received in {{app}}. Draft a reply that does the following: {{userInput}}. Match the sender's tone and keep it short. Output only the reply.
+```
+
+</details>
+
+<details>
+<summary><b>One-line definition</b> (give it a small panel size)</summary>
+
+```text
+Define the selected term in one sentence, the way a knowledgeable colleague would. If it's an acronym, expand it first.
+```
+
+</details>
+
+Presets can be exported and imported as JSON from **Settings → Prompts**, so a good set is easy to share.
+
+## Reference
+
+### Panel shortcuts
 
 | Key | Action |
 | --- | --- |
-| `Esc` | Close panel (or collapse follow-up if open) — works the moment the panel opens; no need to click into a field first. Closing the panel also cancels any in-flight LLM stream. |
-| `⌘↵` | Send / Ask |
-| `↵` | Send (when the preset's user-input field is focused; `Shift+↵` inserts a newline) |
-| `⌘C` | Copy *selected* text from the response, or the whole response if nothing is selected |
-| `⌘+` / `⌘=` | Increase response font size (clamped to the 11–18 pt range) |
-| `⌘-` | Decrease response font size |
-| `⌘L` | Open follow-up bar |
-| `⌘,` | Open Settings (panel stays open behind the Settings window) |
+| <kbd>Esc</kbd> | Close the panel (or collapse the follow-up bar if it's open). Closing also cancels a response that's still streaming. |
+| <kbd>⌘</kbd> <kbd>↵</kbd> | Send / Ask |
+| <kbd>↵</kbd> | Send, when the preset's input field is focused (<kbd>⇧</kbd> <kbd>↵</kbd> inserts a newline) |
+| <kbd>⌘</kbd> <kbd>C</kbd> | Copy the selected part of the response, or all of it if nothing is selected |
+| <kbd>⌘</kbd> <kbd>+</kbd> / <kbd>⌘</kbd> <kbd>-</kbd> | Make the response text bigger or smaller (11–18 pt) |
+| <kbd>⌘</kbd> <kbd>L</kbd> | Open the follow-up bar |
+| <kbd>⌘</kbd> <kbd>,</kbd> | Open Settings (the panel stays open behind it) |
 
-**Settings → General → Window behaviour** controls where the panel appears and what happens when you click outside it:
+<details>
+<summary><b>Presets and modes</b></summary>
 
-- **Panel placement on invocation**: *Near cursor* (default) · *Centered on cursor* · *Centered on screen*. All three clamp to the active screen's visible frame.
-- **When clicking outside the panel**: *Stay on top* (default, floating level until dismissed) · *Recede to background* (drops to normal window level, behaves like any Mac window) · *Close* (dismisses on click-off). Clicking into Settings (or any other of the app's own windows) never triggers the click-off behaviour.
-- For *Stay on top* and *Recede to background*, the app temporarily promotes itself to a regular activation policy while the panel is alive, so it appears in **Cmd+Tab** and you can always bring it back to the foreground. *Close* keeps the lighter agent (`LSUIElement`) policy since the panel dismisses itself anyway.
-- Click-off only changes window level/focus — it never cancels an in-flight LLM stream. The stream is cancelled only when you actually close the panel (Esc / ✕) or invoke a new query.
+Each preset has two toggles in **Settings → Prompts → Edit**, and together they decide how it behaves:
 
-**Settings → General → History** controls a per-preset *recent queries* dropdown (small clock icon). For capturing presets it appears in the row next to the captured selection; for direct-prompt presets — which have no selection row — it appears at the right edge of the panel header instead. Picking an entry restores the panel exactly as you saw it for that invocation — selection text (or user input for direct-prompt), instruction field, model, and the streamed response — without re-running the LLM. Hit ⌘↵ if you want a fresh response. The integer setting caps how many entries are kept per preset (0 disables recording and hides the dropdown). Stored only on this Mac.
+- **Capture selected text on invocation.** When it's on, the selection is sent to the model. When it's off, the panel is a plain prompt box and whatever you type becomes the message.
+- **Requires user input.** When it's on, the panel waits for you to type something, which the system prompt can use as `{{userInput}}`.
 
-**Per-preset panel size.** In **Settings → Prompts → Edit**, each preset has an optional *Panel size* (width × height in points). Either dimension can be set independently — an unset one falls back to the default 460×380. Dragging the panel's edge to resize automatically saves the new size back to the active preset, so each preset opens at the size you last left it.
+The three built-in presets cover the common combinations:
 
-**Settings → General → Appearance** controls the panel's look:
+- **Explain** (<kbd>⌥</kbd> <kbd>Space</kbd>) sends the selection as soon as you press the hotkey.
+- **Ask** (<kbd>⌥</kbd> <kbd>⇧</kbd> <kbd>Space</kbd>) captures the selection and waits for your question.
+- **Prompt** (<kbd>⌃</kbd> <kbd>⌥</kbd> <kbd>Space</kbd>) skips the selection and works like a quick chat box.
 
-- Font size (11–18 pt).
-- **Panel theme**: *System (translucent)* default · *Light (opaque)* · *Dark (opaque)* · *Custom colors* (`#RGB`, `#RRGGBB`, or `#RRGGBBAA` for both background and text, with a live swatch). Custom mode picks a matching `ColorScheme` automatically from the background's perceived luminance so chrome (borders, chevrons, secondary labels) stays legible.
+<kbd>⌥</kbd> <kbd>Space</kbd> opens whichever preset is set as the default, which is Explain to begin with. Change any of these shortcuts in **Settings → General** and **Settings → Prompts**.
 
-If a Service entry doesn't appear in the right-click menu, see [`docs/TROUBLESHOOTING.md`](docs/TROUBLESHOOTING.md#services-menu-entry-doesnt-appear).
+All of them can be edited, renamed or deleted. Your edits and deletions are respected across updates. The input field grows with what you type (up to about 30 lines), so multi-paragraph prompts work fine.
 
-## Quick start (contributors)
+</details>
 
-For day-to-day iteration, the one command you need is:
+<details>
+<summary><b>Window behavior</b></summary>
+
+**Settings → General → Window behavior**
+
+- **Panel placement:** *Centered on cursor* (default), *Near cursor* or *Centered on screen*. The panel always stays on the active screen.
+- **When clicking outside the panel:**
+  - *Stay on top* (default) keeps it floating until you dismiss it.
+  - *Recede to background* lets it behave like a normal window.
+  - *Close* dismisses it.
+
+  With the first two, Squint appears in <kbd>⌘</kbd> <kbd>Tab</kbd> while the panel is open, so you can always get back to it. Clicking away never cancels a response; only closing the panel or starting a new query does.
+
+</details>
+
+<details>
+<summary><b>History</b></summary>
+
+**Settings → General → History**
+
+- Each preset keeps its recent queries, 10 by default and up to 50; set it to 0 to disable. Open the list with the clock icon in the panel.
+- Picking an entry restores that session exactly (the selection or your input, the model and the response) without calling the model again. Press <kbd>⌘</kbd> <kbd>↵</kbd> to get a fresh answer.
+- History is stored only on your Mac.
+
+</details>
+
+<details>
+<summary><b>Panel size and appearance</b></summary>
+
+- **Size per preset.** Resize the panel by dragging its edge, and the size is saved to the active preset, so a translation preset can open tall while a definition preset stays compact. You can also set it in the preset editor. The built-in presets come sized for their job, and new presets start at 460 × 380.
+- **Theme:** *Dark* (default), *System (translucent)*, *Light*, or *Custom colors* (`#RGB`, `#RRGGBB` or `#RRGGBBAA` for background and text). Custom colors pick a matching light or dark style automatically so the rest of the panel stays legible.
+- **Font size:** 11–18 pt, 14 by default.
+
+</details>
+
+<details>
+<summary><b>Prompt variables</b></summary>
+
+System prompts can include these variables, which are filled in when you invoke a preset:
+
+| Variable | Value |
+| --- | --- |
+| `{{selection}}` | The selected text (it's also sent as the message) |
+| `{{userInput}}` | What you typed into the panel |
+| `{{app}}` | The app you were in |
+| `{{windowTitle}}` | That app's window title, when macOS provides it |
+| `{{date}}` | Today's date |
+
+</details>
+
+## FAQ
+
+**Does it work in every app?**
+Almost. The hotkey reads the selection through macOS Accessibility and falls back to a simulated copy in apps that don't support it. Right-click → **Services → Ask Squint** works anywhere macOS Services do. If something doesn't work, see [Troubleshooting](docs/TROUBLESHOOTING.md).
+
+**Which model should I use?**
+For the instant feel, use a fast model. With a reasoning model, set the reasoning effort to *minimal* on the model or preset, or answers will take a few seconds to start. Local models through Ollama or LM Studio work too.
+
+**One of the hotkeys is already taken on my Mac.**
+Change <kbd>⌥</kbd> <kbd>Space</kbd> in **Settings → General**, and any preset's shortcut in **Settings → Prompts**.
+
+## Contributing
+
+Squint is a native Swift app built with SwiftUI and AppKit. It talks to models over plain `URLSession` streaming and depends on just two Swift packages: [KeyboardShortcuts](https://github.com/sindresorhus/KeyboardShortcuts) and [MarkdownUI](https://github.com/gonzalezreal/swift-markdown-ui). The whole dev loop is one command:
 
 ```bash
 ./bin/dev-restart.sh
 ```
 
-It regenerates the Xcode project if `project.yml` changed, kills any running copy, builds, re-registers with Launch Services (so the right-click Services menu picks up changes), and relaunches. See [`docs/DEVELOPMENT.md`](docs/DEVELOPMENT.md#iteration-loop-terminal-driven) for what it does and why.
+It regenerates the Xcode project if needed, rebuilds, re-registers the Services menu, and relaunches. Before you dig in, read:
 
-Then read these in order:
-
-1. [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) — how the codebase is laid out, the request pipeline, key types, threading model.
-2. [`docs/DEVELOPMENT.md`](docs/DEVELOPMENT.md) — environment setup, build, run, test, debug, log capture.
-3. [`docs/EXTENDING.md`](docs/EXTENDING.md) — recipes for adding a provider, prompt preset, or capture strategy.
-4. [`docs/TROUBLESHOOTING.md`](docs/TROUBLESHOOTING.md) — the hard-won macOS-specific gotchas this project has hit. Read this *before* you debug anything weird.
-
-## Repository layout
-
-```text
-text-select-llm/
-├── README.md                  This file
-├── project.yml                XcodeGen spec; generates Squint.xcodeproj
-├── .gitignore
-├── docs/
-│   ├── ARCHITECTURE.md
-│   ├── DEVELOPMENT.md
-│   ├── EXTENDING.md
-│   └── TROUBLESHOOTING.md
-├── Squint/                    Application source (Swift, organized by feature module)
-│   ├── App/                   App entry point, AppDelegate, Info.plist, entitlements
-│   ├── MenuBar/               NSStatusItem + menu
-│   ├── Hotkey/                Global hotkey via KeyboardShortcuts SPM package
-│   ├── Services/              macOS Services / right-click integration
-│   ├── Capture/               Selected-text capture strategies (AX, clipboard, manual)
-│   ├── Prompt/                PromptBuilder + variable expansion
-│   ├── Prompts/               PromptPreset + PromptPresetStore (user-defined)
-│   ├── LLM/                   LLMProvider protocol + OpenAI-compatible client
-│   ├── Models/                ModelConfig + ModelStore
-│   ├── Storage/               KeychainStore, SettingsStore, optional history
-│   ├── Panel/                 Floating NSPanel + SwiftUI panel content
-│   ├── Settings/              SwiftUI Settings scene (5 tabs incl. Prompts)
-│   ├── Onboarding/            First-launch onboarding window
-│   └── Util/                  Logger, debouncer, launch-at-login
-└── SquintTests/               XCTest unit tests
-```
-
-## High-level architecture
-
-```
-Hotkey | Services
-      ↓
-  SelectionCaptureService  →  ContextBundle
-      ↓                            ↓
-  FloatingPanelController  →  PanelViewModel
-                                   ↓
-                           PromptBuilder
-                                   ↓
-                           ProviderRegistry
-                                   ↓
-                       OpenAICompatibleClient
-                                   ↓
-                  AsyncThrowingStream<LLMToken>
-                                   ↓
-                           PanelView (SwiftUI)
-```
-
-Full diagrams and module-by-module narrative in [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md).
-
-## Tech stack
-
-- **Language:** Swift 5.9+, targeting macOS 14+.
-- **UI:** SwiftUI for panel content and settings; AppKit for `NSStatusItem`, `NSPanel`, Services, activation policy.
-- **Hotkey:** [`sindresorhus/KeyboardShortcuts`](https://github.com/sindresorhus/KeyboardShortcuts) (SPM).
-- **Markdown rendering:** [`gonzalezreal/swift-markdown-ui`](https://github.com/gonzalezreal/swift-markdown-ui) (SPM).
-- **Networking:** `URLSession` with `bytes(for:).lines` for SSE streaming. No third-party HTTP lib.
-- **Storage:** `UserDefaults` for prefs, JSON file in Application Support for `[ModelConfig]`, macOS Keychain (`SecItem*` APIs) for API keys.
-- **Project generation:** XcodeGen — the `.xcodeproj` is regenerable from `project.yml`, so it's gitignored.
-
-## Privacy
-
-- No telemetry. No analytics. No crash reporting.
-- No backend owned by this app — API calls go directly from the user's machine to their configured provider.
-- API keys live in the macOS login Keychain.
-- No background scraping. The app never reads selected text or pasteboard contents until the user explicitly invokes it (hotkey or right-click Services).
-- On invocation in apps where Accessibility doesn't expose the selection, the app simulates Cmd+C to capture the highlighted text, then restores the previous pasteboard. This is on by default and can be disabled in **Settings → Capture**.
-- Local history is **off by default**; when enabled, stored as a JSON file on disk only.
+1. [Architecture](docs/ARCHITECTURE.md): how the code is laid out and how a request flows through it.
+2. [Development](docs/DEVELOPMENT.md): setup, building, testing, debugging and logs.
+3. [Extending](docs/EXTENDING.md): recipes for adding a provider, a preset or a capture strategy.
+4. [Troubleshooting](docs/TROUBLESHOOTING.md): the macOS gotchas this project has already hit. Read it *before* debugging anything weird.
 
 ## License
 
-Internal project — license TBD before any public release.
+Squint is released under the [MIT License](LICENSE).
