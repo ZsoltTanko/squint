@@ -1,5 +1,7 @@
 <div align="center">
 
+<img src="Squint/Assets.xcassets/AppIcon.appiconset/icon_128x128@2x.png" width="128" height="128" alt="Squint's app icon: a half-closed eye on a dark rounded square">
+
 # Squint
 
 ### Select any text. Press <kbd>⌥</kbd> <kbd>Space</kbd>. Get it.
