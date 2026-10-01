@@ -68,7 +68,7 @@ struct PromptPresetEditor: View {
     private var editorForm: some View {
         Form {
             Section("Identity") {
-                TextField("Name", text: $draft.name)
+                TextField("Name", text: $draft.name, prompt: Text("e.g. Translate to Spanish"))
             }
 
             Section("System prompt") {

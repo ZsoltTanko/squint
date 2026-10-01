@@ -137,7 +137,7 @@ private struct ModelEditor: View {
         VStack(spacing: 0) {
             Form {
                 Section("Display") {
-                    TextField("Display name", text: $draft.displayName)
+                    TextField("Display name", text: $draft.displayName, prompt: Text("Shown in the panel's model picker"))
                 }
                 Section("Provider") {
                     Picker("Provider", selection: $draft.provider) {
@@ -145,11 +145,11 @@ private struct ModelEditor: View {
                             Text(p.displayName).tag(p)
                         }
                     }
-                    TextField("Model name", text: $draft.modelName)
-                    TextField("Base URL", text: $baseURLString)
+                    TextField("Model name", text: $draft.modelName, prompt: Text("e.g. gpt-6-luna, anthropic/claude-sonnet-5"))
+                    TextField("Base URL", text: $baseURLString, prompt: Text("e.g. https://api.openai.com/v1"))
                 }
                 Section("API Key") {
-                    SecureField(isNew ? "API key (stored in Keychain)" : "API key — leave blank to keep existing", text: $apiKey)
+                    SecureField("API key", text: $apiKey, prompt: Text(isNew ? "Paste your API key" : "Leave blank to keep the current key"))
                     Text("Stored in macOS Keychain. Not required for localhost endpoints (Ollama, LM Studio).")
                         .font(.caption)
                         .foregroundStyle(.secondary)
